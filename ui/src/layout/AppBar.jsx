@@ -6,9 +6,16 @@ import {
   usePermissions,
   getResources,
 } from 'react-admin'
-import { MdInfo, MdPerson, MdSupervisorAccount } from 'react-icons/md'
-import { useSelector } from 'react-redux'
-import { makeStyles, MenuItem, ListItemIcon, Divider } from '@material-ui/core'
+import { MdInfo, MdPerson, MdSupervisorAccount, MdGroups } from 'react-icons/md'
+import { useSelector, useDispatch } from 'react-redux'
+import {
+  makeStyles,
+  MenuItem,
+  ListItemIcon,
+  Divider,
+  IconButton,
+  Tooltip,
+} from '@material-ui/core'
 import ViewListIcon from '@material-ui/icons/ViewList'
 import { Dialogs } from '../dialogs/Dialogs'
 import { AboutDialog } from '../dialogs'
@@ -16,6 +23,7 @@ import PersonalMenu from './PersonalMenu'
 import ActivityPanel from './ActivityPanel'
 import NowPlayingPanel from './NowPlayingPanel'
 import UserMenu from './UserMenu'
+import { toggleCommunitySidebar } from '../actions'
 import config from '../config'
 
 const useStyles = makeStyles(
@@ -60,6 +68,24 @@ const AboutMenuItem = forwardRef(({ onClick, ...rest }, ref) => {
 })
 
 AboutMenuItem.displayName = 'AboutMenuItem'
+
+const CommunitySidebarToggle = () => {
+  const dispatch = useDispatch()
+  const translate = useTranslate()
+  const open = useSelector((state) => state.settings.communitySidebarOpen)
+  return (
+    <Tooltip title={translate('community.sidebarTitle')}>
+      <IconButton
+        color="inherit"
+        aria-label={translate('community.sidebarTitle')}
+        aria-pressed={open}
+        onClick={() => dispatch(toggleCommunitySidebar())}
+      >
+        <MdGroups size={22} />
+      </IconButton>
+    </Tooltip>
+  )
+}
 
 const settingsResources = (resource) =>
   resource.name !== 'user' &&
@@ -120,9 +146,8 @@ const CustomUserMenu = ({ onClick, ...rest }) => {
 
   return (
     <>
-      {config.devActivityPanel &&
-        permissions === 'admin' &&
-        config.enableNowPlaying && <NowPlayingPanel />}
+      {config.enableCommunity && <CommunitySidebarToggle />}
+      {config.enableNowPlaying && <NowPlayingPanel />}
       {config.devActivityPanel && permissions === 'admin' && <ActivityPanel />}
       <UserMenu {...rest}>
         <PersonalMenu sidebarIsOpen={true} onClick={onClick} />

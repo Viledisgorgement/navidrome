@@ -488,4 +488,5 @@ const NowPlayingPanel = () => {
 
 NowPlayingPanel.propTypes = {}
 
+export { NowPlayingItem }
 export default NowPlayingPanel

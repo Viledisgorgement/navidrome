@@ -2,12 +2,14 @@ import {
   SET_NOTIFICATIONS_STATE,
   SET_OMITTED_FIELDS,
   SET_TOGGLEABLE_FIELDS,
+  TOGGLE_COMMUNITY_SIDEBAR,
 } from '../actions'
 
 const initialState = {
   notifications: false,
   toggleableFields: {},
   omittedFields: {},
+  communitySidebarOpen: true,
 }
 
 export const settingsReducer = (previousState = initialState, payload) => {
@@ -33,6 +35,11 @@ export const settingsReducer = (previousState = initialState, payload) => {
           ...previousState.omittedFields,
           ...data,
         },
+      }
+    case TOGGLE_COMMUNITY_SIDEBAR:
+      return {
+        ...previousState,
+        communitySidebarOpen: !previousState.communitySidebarOpen,
       }
     default:
       return previousState
