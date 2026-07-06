@@ -22,3 +22,15 @@ func (m *MockScrobbleRepo) RecordScrobble(fileID string, submissionTime time.Tim
 	})
 	return nil
 }
+
+func (m *MockScrobbleRepo) Recent(limit, offset int, userIDs []string) ([]model.PlayEntry, error) {
+	return nil, nil
+}
+
+func (m *MockScrobbleRepo) Top(kind string, since time.Time, limit int, userIDs []string) ([]model.TopEntry, error) {
+	return nil, nil
+}
+
+func (m *MockScrobbleRepo) ActiveUsers() ([]model.ScrobbleUser, error) {
+	return nil, nil
+}

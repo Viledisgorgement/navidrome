@@ -439,7 +439,7 @@ func (p *playTracker) Submit(ctx context.Context, submissions []Submission) erro
 }
 
 func (p *playTracker) incPlay(ctx context.Context, track *model.MediaFile, timestamp time.Time) error {
-	return p.ds.WithTx(func(tx model.DataStore) error {
+	err := p.ds.WithTx(func(tx model.DataStore) error {
 		err := tx.MediaFile(ctx).IncPlayCount(track.ID, timestamp)
 		if err != nil {
 			return err
@@ -459,6 +459,18 @@ func (p *playTracker) incPlay(ctx context.Context, track *model.MediaFile, times
 		}
 		return nil
 	})
+	if err == nil && conf.Server.EnableCommunity {
+		username, _ := request.UsernameFrom(ctx)
+		p.broker.SendBroadcastMessage(ctx, &events.PlayEvent{
+			UserName:  username,
+			SongID:    track.ID,
+			Title:     track.Title,
+			Artist:    track.Artist,
+			AlbumID:   track.AlbumID,
+			Timestamp: timestamp,
+		})
+	}
+	return err
 }
 
 func (p *playTracker) dispatchScrobble(ctx context.Context, t *model.MediaFile, playTime time.Time) {

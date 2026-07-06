@@ -23,6 +23,9 @@ const setupHandlers = (stream, dispatchFn) => {
   if (config.enableNowPlaying) {
     stream.addEventListener('nowPlayingCount', eventHandler(dispatchFn))
   }
+  if (config.enableCommunity) {
+    stream.addEventListener('playEvent', eventHandler(dispatchFn))
+  }
   stream.addEventListener('keepAlive', eventHandler(dispatchFn))
   stream.onerror = (e) => {
     // eslint-disable-next-line no-console
@@ -78,6 +81,9 @@ const startEventStreamLegacy = async (dispatchFn) => {
       newStream.addEventListener('refreshResource', eventHandler(dispatchFn))
       if (config.enableNowPlaying) {
         newStream.addEventListener('nowPlayingCount', eventHandler(dispatchFn))
+      }
+      if (config.enableCommunity) {
+        newStream.addEventListener('playEvent', eventHandler(dispatchFn))
       }
       newStream.addEventListener('keepAlive', eventHandler(dispatchFn))
       newStream.onerror = (e) => {

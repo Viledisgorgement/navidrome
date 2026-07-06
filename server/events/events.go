@@ -68,6 +68,16 @@ type NowPlayingCount struct {
 	Count int `json:"count"`
 }
 
+type PlayEvent struct {
+	baseEvent
+	UserName  string    `json:"userName"`
+	SongID    string    `json:"songId"`
+	Title     string    `json:"title"`
+	Artist    string    `json:"artist"`
+	AlbumID   string    `json:"albumId"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
 func (rr *RefreshResource) With(resource string, ids ...string) *RefreshResource {
 	if rr.resources == nil {
 		rr.resources = make(map[string][]string)
