@@ -729,6 +729,14 @@
       "all": "All time"
     }
   },
+  "discography": {
+    "showMissing": "Show missing albums",
+    "hideMissing": "Hide missing albums",
+    "summary": "%{owned} of %{total} releases in library",
+    "refresh": "Refresh discography",
+    "noData": "No discography data found for this artist",
+    "complete": "Nothing missing — collection complete for these release types!"
+  },
   "help": {
     "title": "Navidrome Hotkeys",
     "hotkeys": {

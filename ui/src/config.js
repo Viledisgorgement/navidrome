@@ -34,6 +34,7 @@ const defaultConfig = {
   enableCoverAnimation: true,
   enableNowPlaying: true,
   enableCommunity: true,
+  enableDiscography: true,
   playbackReportIntervalMs: 60000,
   devShowArtistPage: true,
   devUIShowConfig: true,

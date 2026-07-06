@@ -9,6 +9,7 @@ import (
 
 	"github.com/deluan/rest"
 	"github.com/go-chi/chi/v5"
+	"github.com/navidrome/navidrome/conf"
 	"github.com/navidrome/navidrome/consts"
 	"github.com/navidrome/navidrome/model"
 	"github.com/navidrome/navidrome/server"
@@ -25,6 +26,9 @@ func (api *Router) addArtistRoute(r chi.Router) {
 			r.Get("/", rest.Get(constructor))
 			r.Post("/image", api.uploadArtistImage())
 			r.Delete("/image", api.deleteArtistImage())
+			if conf.Server.MusicBrainz.Enabled || conf.Server.MetalArchives.Enabled {
+				r.Get("/discography", api.getArtistDiscography)
+			}
 		})
 	})
 }

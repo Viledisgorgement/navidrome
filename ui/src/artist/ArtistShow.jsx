@@ -15,6 +15,7 @@ import MobileArtistDetails from './MobileArtistDetails'
 import DesktopArtistDetails from './DesktopArtistDetails'
 import { useAlbumsPerPage, useResourceRefresh, Title } from '../common/index.js'
 import ArtistActions from './ArtistActions'
+import DiscographySection from './DiscographySection'
 import { makeStyles } from '@material-ui/core'
 
 const useStyles = makeStyles(
@@ -126,6 +127,7 @@ const ArtistShowLayout = (props) => {
           <AlbumGridView {...props} />
         </ReferenceManyField>
       )}
+      {record && <DiscographySection record={record} />}
     </>
   )
 }

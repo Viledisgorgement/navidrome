@@ -118,6 +118,8 @@ type configOptions struct {
 	ListenBrainz                    listenBrainzOptions `json:",omitzero"`
 	EnableScrobbleHistory           bool
 	EnableCommunity                 bool
+	MusicBrainz                     musicBrainzOptions   `json:",omitzero"`
+	MetalArchives                   metalArchivesOptions `json:",omitzero"`
 	Tags                            map[string]TagConf `json:",omitempty"`
 	Agents                          string
 
@@ -210,6 +212,16 @@ type deezerOptions struct {
 
 	// Computed values
 	Languages []string // Computed from Language, split by comma
+}
+
+type musicBrainzOptions struct {
+	Enabled bool
+	BaseURL string
+}
+
+type metalArchivesOptions struct {
+	Enabled bool
+	BaseURL string
 }
 
 type listenBrainzOptions struct {
@@ -851,6 +863,10 @@ func setViperDefaults() {
 	viper.SetDefault("listenbrainz.trackalgorithm", consts.DefaultListenBrainzTrackAlgorithm)
 	viper.SetDefault("enablescrobblehistory", true)
 	viper.SetDefault("enablecommunity", true)
+	viper.SetDefault("musicbrainz.enabled", true)
+	viper.SetDefault("musicbrainz.baseurl", "https://musicbrainz.org")
+	viper.SetDefault("metalarchives.enabled", false)
+	viper.SetDefault("metalarchives.baseurl", "https://www.metal-archives.com")
 	viper.SetDefault("httpheaders.frameoptions", "DENY")
 	viper.SetDefault("backup.path", "")
 	viper.SetDefault("backup.schedule", "")

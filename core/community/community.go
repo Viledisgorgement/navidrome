@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/navidrome/navidrome/adapters/musicbrainz"
+	"github.com/navidrome/navidrome/conf"
 	"github.com/navidrome/navidrome/model"
 )
 
@@ -19,14 +21,20 @@ type Service interface {
 	Recent(ctx context.Context, limit, offset int, userIDs []string) ([]model.PlayEntry, error)
 	Top(ctx context.Context, kind, timeRange string, limit int, userIDs []string) ([]model.TopEntry, error)
 	Users(ctx context.Context) ([]model.ScrobbleUser, error)
+	Discography(ctx context.Context, artistID string, refresh bool) (*Discography, error)
 }
 
 func NewService(ds model.DataStore) Service {
-	return &service{ds: ds}
+	s := &service{ds: ds}
+	if conf.Server.MusicBrainz.Enabled {
+		s.mbz = musicbrainz.NewClient(conf.Server.MusicBrainz.BaseURL)
+	}
+	return s
 }
 
 type service struct {
-	ds model.DataStore
+	ds  model.DataStore
+	mbz *musicbrainz.Client
 }
 
 func (s *service) Recent(ctx context.Context, limit, offset int, userIDs []string) ([]model.PlayEntry, error) {

@@ -8,28 +8,29 @@ import (
 )
 
 type MockDataStore struct {
-	RealDS               model.DataStore
-	MockedLibrary        model.LibraryRepository
-	MockedFolder         model.FolderRepository
-	MockedGenre          model.GenreRepository
-	MockedAlbum          model.AlbumRepository
-	MockedArtist         model.ArtistRepository
-	MockedMediaFile      model.MediaFileRepository
-	MockedTag            model.TagRepository
-	MockedUser           model.UserRepository
-	MockedProperty       model.PropertyRepository
-	MockedPlayer         model.PlayerRepository
-	MockedPlaylist       model.PlaylistRepository
-	MockedPlayQueue      model.PlayQueueRepository
-	MockedShare          model.ShareRepository
-	MockedTranscoding    model.TranscodingRepository
-	MockedUserProps      model.UserPropsRepository
-	MockedScrobbleBuffer model.ScrobbleBufferRepository
-	MockedScrobble       model.ScrobbleRepository
-	MockedRadio          model.RadioRepository
-	MockedPlugin         model.PluginRepository
-	scrobbleBufferMu     sync.Mutex
-	repoMu               sync.Mutex
+	RealDS                model.DataStore
+	MockedLibrary         model.LibraryRepository
+	MockedFolder          model.FolderRepository
+	MockedGenre           model.GenreRepository
+	MockedAlbum           model.AlbumRepository
+	MockedArtist          model.ArtistRepository
+	MockedMediaFile       model.MediaFileRepository
+	MockedTag             model.TagRepository
+	MockedUser            model.UserRepository
+	MockedProperty        model.PropertyRepository
+	MockedPlayer          model.PlayerRepository
+	MockedPlaylist        model.PlaylistRepository
+	MockedPlayQueue       model.PlayQueueRepository
+	MockedShare           model.ShareRepository
+	MockedTranscoding     model.TranscodingRepository
+	MockedUserProps       model.UserPropsRepository
+	MockedScrobbleBuffer  model.ScrobbleBufferRepository
+	MockedScrobble        model.ScrobbleRepository
+	MockedExternalRelease model.ExternalReleaseRepository
+	MockedRadio           model.RadioRepository
+	MockedPlugin          model.PluginRepository
+	scrobbleBufferMu      sync.Mutex
+	repoMu                sync.Mutex
 
 	// GC tracking
 	GCCalled bool
@@ -223,6 +224,17 @@ func (db *MockDataStore) Scrobble(ctx context.Context) model.ScrobbleRepository 
 	}
 	db.MockedScrobble = &MockScrobbleRepo{ctx: ctx}
 	return db.MockedScrobble
+}
+
+func (db *MockDataStore) ExternalRelease(ctx context.Context) model.ExternalReleaseRepository {
+	if db.MockedExternalRelease != nil {
+		return db.MockedExternalRelease
+	}
+	if db.RealDS != nil {
+		return db.RealDS.ExternalRelease(ctx)
+	}
+	db.MockedExternalRelease = &MockExternalReleaseRepo{}
+	return db.MockedExternalRelease
 }
 
 func (db *MockDataStore) Radio(ctx context.Context) model.RadioRepository {

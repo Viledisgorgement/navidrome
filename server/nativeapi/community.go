@@ -64,7 +64,7 @@ func postCommunityAlertsSeenStub(w http.ResponseWriter, _ *http.Request) {
 }
 
 func writeJSON(w http.ResponseWriter, r *http.Request, payload any) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
 		log.Error(r.Context(), "Error encoding response", err)
 	}

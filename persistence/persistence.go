@@ -93,6 +93,10 @@ func (s *SQLStore) Scrobble(ctx context.Context) model.ScrobbleRepository {
 	return NewScrobbleRepository(ctx, s.getDBXBuilder())
 }
 
+func (s *SQLStore) ExternalRelease(ctx context.Context) model.ExternalReleaseRepository {
+	return NewExternalReleaseRepository(ctx, s.getDBXBuilder())
+}
+
 func (s *SQLStore) Plugin(ctx context.Context) model.PluginRepository {
 	return NewPluginRepository(ctx, s.getDBXBuilder())
 }

@@ -48,7 +48,7 @@ type dbPlayEntry struct {
 func (r *scrobbleRepository) Recent(limit, offset int, userIDs []string) ([]model.PlayEntry, error) {
 	sq := Select("s.user_id", "u.user_name", "s.media_file_id", "s.submission_time",
 		"mf.title", "mf.artist", "mf.artist_id", "mf.album", "mf.album_id").
-		From(r.tableName+" s").
+		From(r.tableName + " s").
 		Join("user u on u.id = s.user_id").
 		Join("media_file mf on mf.id = s.media_file_id").
 		OrderBy("s.submission_time desc").
