@@ -709,11 +709,25 @@
     "minutesAgo": "%{smart_count} minute ago |||| %{smart_count} minutes ago"
   },
   "community": {
+    "title": "Community",
     "sidebarTitle": "Community Activity",
     "recentlyPlayed": "Recently Played",
     "noPlays": "No plays yet",
     "justNow": "just now",
-    "hoursAgo": "%{smart_count} hour ago |||| %{smart_count} hours ago"
+    "hoursAgo": "%{smart_count} hour ago |||| %{smart_count} hours ago",
+    "topAlbums": "Top Albums",
+    "topArtists": "Top Artists",
+    "topSongs": "Top Songs",
+    "feedTitle": "Everyone's Plays",
+    "allUsers": "Everyone",
+    "loadMore": "Load more",
+    "plays": "%{smart_count} play |||| %{smart_count} plays",
+    "ranges": {
+      "7d": "7 days",
+      "30d": "30 days",
+      "90d": "90 days",
+      "all": "All time"
+    }
   },
   "help": {
     "title": "Navidrome Hotkeys",
