@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/navidrome/navidrome/adapters/metalarchives"
 	"github.com/navidrome/navidrome/adapters/musicbrainz"
 	"github.com/navidrome/navidrome/conf"
 	"github.com/navidrome/navidrome/model"
@@ -29,12 +30,16 @@ func NewService(ds model.DataStore) Service {
 	if conf.Server.MusicBrainz.Enabled {
 		s.mbz = musicbrainz.NewClient(conf.Server.MusicBrainz.BaseURL)
 	}
+	if conf.Server.MetalArchives.Enabled {
+		s.ma = metalarchives.NewClient(conf.Server.MetalArchives.BaseURL)
+	}
 	return s
 }
 
 type service struct {
 	ds  model.DataStore
 	mbz *musicbrainz.Client
+	ma  *metalarchives.Client
 }
 
 func (s *service) Recent(ctx context.Context, limit, offset int, userIDs []string) ([]model.PlayEntry, error) {

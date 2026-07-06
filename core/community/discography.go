@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/squirrel"
+	"github.com/navidrome/navidrome/adapters/metalarchives"
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
 )
@@ -45,11 +47,20 @@ func (s *service) Discography(ctx context.Context, artistID string, refresh bool
 	if s.mbz != nil && s.needsRefresh(repo, artistID, model.ReleaseSourceMusicBrainz, refresh) {
 		s.refreshMusicBrainz(ctx, artist, repo)
 	}
+	if s.ma != nil && s.needsRefresh(repo, artistID, model.ReleaseSourceMetalArchives, refresh) {
+		s.refreshMetalArchives(ctx, artist, repo)
+	}
 
 	cached, err := repo.GetByArtist(artistID)
 	if err != nil {
 		return nil, err
 	}
+	// Metal Archives entries win the cross-source dedupe below: its release
+	// types (Demo/Split/EP distinctions) are more reliable for metal
+	sort.SliceStable(cached, func(i, j int) bool {
+		return cached[i].Source == model.ReleaseSourceMetalArchives &&
+			cached[j].Source != model.ReleaseSourceMetalArchives
+	})
 
 	albums, err := s.ds.Album(ctx).GetAll(model.QueryOptions{
 		Filters: squirrel.Eq{"album.album_artist_id": artistID},
@@ -159,6 +170,64 @@ func (s *service) refreshMusicBrainz(ctx context.Context, artist *model.Artist, 
 	} else {
 		info.FetchStatus = "ok"
 		log.Info(ctx, "Cached MusicBrainz discography", "artist", artist.Name, "releases", len(releases))
+	}
+	_ = repo.PutArtistInfo(info)
+}
+
+func (s *service) refreshMetalArchives(ctx context.Context, artist *model.Artist, repo model.ExternalReleaseRepository) {
+	info, err := repo.GetArtistInfo(artist.ID, model.ReleaseSourceMetalArchives)
+	if err != nil {
+		info = &model.ExternalArtistInfo{
+			ArtistID: artist.ID,
+			Source:   model.ReleaseSourceMetalArchives,
+		}
+	}
+	info.LastFetchedAt = time.Now()
+
+	// The band id search only runs until it succeeds once; after that the
+	// resolved id is reused from external_artist_info
+	if info.ExternalArtistID == "" {
+		bandID, err := s.ma.SearchBand(ctx, artist.Name)
+		if errors.Is(err, metalarchives.ErrNotFound) {
+			info.FetchStatus = "not_found"
+			_ = repo.PutArtistInfo(info)
+			return
+		}
+		if err != nil {
+			log.Warn(ctx, "Metal Archives band search failed", "artist", artist.Name, err)
+			info.FetchStatus = "error"
+			_ = repo.PutArtistInfo(info)
+			return
+		}
+		info.ExternalArtistID = bandID
+	}
+
+	maReleases, err := s.ma.Discography(ctx, info.ExternalArtistID)
+	if err != nil {
+		log.Warn(ctx, "Metal Archives discography fetch failed", "artist", artist.Name, "bandId", info.ExternalArtistID, err)
+		info.FetchStatus = "error"
+		_ = repo.PutArtistInfo(info)
+		return
+	}
+	releases := make([]model.ExternalRelease, 0, len(maReleases))
+	for _, r := range maReleases {
+		releases = append(releases, model.ExternalRelease{
+			ID:          model.ReleaseSourceMetalArchives + ":" + r.ID,
+			ArtistID:    artist.ID,
+			Source:      model.ReleaseSourceMetalArchives,
+			ExternalID:  r.ID,
+			Title:       r.Title,
+			ReleaseType: r.Type,
+			Year:        r.Year,
+			ExternalURL: r.URL,
+		})
+	}
+	if err := repo.ReplaceArtistReleases(artist.ID, model.ReleaseSourceMetalArchives, releases); err != nil {
+		log.Error(ctx, "Error caching Metal Archives discography", "artist", artist.Name, err)
+		info.FetchStatus = "error"
+	} else {
+		info.FetchStatus = "ok"
+		log.Info(ctx, "Cached Metal Archives discography", "artist", artist.Name, "bandId", info.ExternalArtistID, "releases", len(releases))
 	}
 	_ = repo.PutArtistInfo(info)
 }
