@@ -22,6 +22,7 @@ import { AboutDialog } from '../dialogs'
 import PersonalMenu from './PersonalMenu'
 import ActivityPanel from './ActivityPanel'
 import NowPlayingPanel from './NowPlayingPanel'
+import ReleaseAlertsPanel from './ReleaseAlertsPanel'
 import UserMenu from './UserMenu'
 import { toggleCommunitySidebar } from '../actions'
 import config from '../config'
@@ -147,6 +148,7 @@ const CustomUserMenu = ({ onClick, ...rest }) => {
   return (
     <>
       {config.enableCommunity && <CommunitySidebarToggle />}
+      {config.enableReleaseAlerts && <ReleaseAlertsPanel />}
       {config.enableNowPlaying && <NowPlayingPanel />}
       {config.devActivityPanel && permissions === 'admin' && <ActivityPanel />}
       <UserMenu {...rest}>

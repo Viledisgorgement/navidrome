@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	htmlesc "html"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -141,6 +142,58 @@ func (c *Client) SearchBand(ctx context.Context, name string) (string, error) {
 		return "", ErrNotFound
 	}
 	return "", ErrNotFound
+}
+
+type UpcomingRelease struct {
+	ID    string
+	Band  string
+	Title string
+	Type  string
+	Date  string
+	URL   string
+}
+
+var albumLinkCellRe = regexp.MustCompile(`href="([^"]*/albums/[^/"]+/[^/"]+/(\d+))"[^>]*>([^<]+)<`)
+var bandLinkCellRe = regexp.MustCompile(`/bands/[^/"]+/\d+"[^>]*>([^<]+)<`)
+
+// UpcomingReleases fetches MA's upcoming releases list (first page, which
+// covers the next weeks — plenty for a daily check).
+func (c *Client) UpcomingReleases(ctx context.Context) ([]UpcomingRelease, error) {
+	params := url.Values{}
+	params.Set("sEcho", "1")
+	params.Set("iDisplayStart", "0")
+	params.Set("iDisplayLength", "100")
+	resp, err := c.get(ctx, c.baseURL+"/release/ajax-upcoming/json/1?"+params.Encode())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var parsed searchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+		return nil, fmt.Errorf("metalarchives: parsing upcoming releases: %w", err)
+	}
+	var releases []UpcomingRelease
+	for _, row := range parsed.Data {
+		// Expected row: [band link html, album link html, type, genre, date, added]
+		if len(row) < 5 {
+			continue
+		}
+		band := bandLinkCellRe.FindStringSubmatch(row[0])
+		album := albumLinkCellRe.FindStringSubmatch(row[1])
+		if band == nil || album == nil {
+			continue
+		}
+		releases = append(releases, UpcomingRelease{
+			ID:    album[2],
+			Band:  strings.TrimSpace(htmlesc.UnescapeString(band[1])),
+			Title: strings.TrimSpace(htmlesc.UnescapeString(album[3])),
+			Type:  normalizeType(strings.TrimSpace(row[2])),
+			Date:  strings.TrimSpace(row[4]),
+			URL:   album[1],
+		})
+	}
+	return releases, nil
 }
 
 // Discography fetches and parses the band's "Complete discography" table.

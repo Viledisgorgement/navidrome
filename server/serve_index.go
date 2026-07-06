@@ -60,6 +60,7 @@ func serveIndex(ds model.DataStore, fs fs.FS, shareInfo *model.Share) http.Handl
 			"enableNowPlaying":          conf.Server.EnableNowPlaying,
 			"enableCommunity":           conf.Server.EnableCommunity,
 			"enableDiscography":         conf.Server.MusicBrainz.Enabled || conf.Server.MetalArchives.Enabled,
+			"enableReleaseAlerts":       conf.Server.EnableReleaseAlerts && (conf.Server.MusicBrainz.Enabled || conf.Server.MetalArchives.Enabled),
 			"playbackReportIntervalMs":  conf.Server.UIPlaybackReportInterval.Milliseconds(),
 			"gaTrackingId":              conf.Server.GATrackingID,
 			"losslessFormats":           strings.ToUpper(strings.Join(mime.LosslessFormats, ",")),

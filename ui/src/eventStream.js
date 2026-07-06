@@ -26,6 +26,9 @@ const setupHandlers = (stream, dispatchFn) => {
   if (config.enableCommunity) {
     stream.addEventListener('playEvent', eventHandler(dispatchFn))
   }
+  if (config.enableReleaseAlerts) {
+    stream.addEventListener('releaseAlert', eventHandler(dispatchFn))
+  }
   stream.addEventListener('keepAlive', eventHandler(dispatchFn))
   stream.onerror = (e) => {
     // eslint-disable-next-line no-console
@@ -84,6 +87,9 @@ const startEventStreamLegacy = async (dispatchFn) => {
       }
       if (config.enableCommunity) {
         newStream.addEventListener('playEvent', eventHandler(dispatchFn))
+      }
+      if (config.enableReleaseAlerts) {
+        newStream.addEventListener('releaseAlert', eventHandler(dispatchFn))
       }
       newStream.addEventListener('keepAlive', eventHandler(dispatchFn))
       newStream.onerror = (e) => {

@@ -35,6 +35,7 @@ const defaultConfig = {
   enableNowPlaying: true,
   enableCommunity: true,
   enableDiscography: true,
+  enableReleaseAlerts: true,
   playbackReportIntervalMs: 60000,
   devShowArtistPage: true,
   devUIShowConfig: true,

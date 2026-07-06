@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/navidrome/navidrome/conf"
 	"github.com/navidrome/navidrome/consts"
+	"github.com/navidrome/navidrome/core/community"
 	"github.com/navidrome/navidrome/db"
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
@@ -18,6 +19,7 @@ import (
 	"github.com/navidrome/navidrome/scanner"
 	"github.com/navidrome/navidrome/scheduler"
 	"github.com/navidrome/navidrome/server/backgrounds"
+	"github.com/navidrome/navidrome/server/events"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sync/errgroup"
@@ -85,6 +87,7 @@ func runNavidrome(ctx context.Context) {
 	g.Go(startScheduler(ctx))
 	g.Go(startPlaybackServer(ctx))
 	g.Go(schedulePeriodicBackup(ctx))
+	g.Go(scheduleReleaseAlerts(ctx))
 	g.Go(startInsightsCollector(ctx))
 	g.Go(scheduleDBOptimizer(ctx))
 	g.Go(startPluginManager(ctx))
@@ -271,6 +274,32 @@ func schedulePeriodicBackup(ctx context.Context) func() error {
 			}
 		})
 
+		return err
+	}
+}
+
+// scheduleReleaseAlerts schedules the periodic check for new/upcoming
+// releases by library artists (MusicBrainz + optionally Metal Archives).
+func scheduleReleaseAlerts(ctx context.Context) func() error {
+	return func() error {
+		if !conf.Server.EnableReleaseAlerts ||
+			(!conf.Server.MusicBrainz.Enabled && !conf.Server.MetalArchives.Enabled) {
+			log.Info(ctx, "Release alerts are DISABLED")
+			return nil
+		}
+		schedule := conf.Server.ReleaseAlertsSchedule
+		checker := community.NewAlertChecker(CreateDataStore(), events.GetBroker())
+
+		log.Info("Scheduling release alerts check", "schedule", schedule)
+		_, err := scheduler.GetInstance().Add(schedule, func() {
+			start := time.Now()
+			count, err := checker.Check(ctx)
+			if err != nil {
+				log.Error(ctx, "Release alerts check failed", "elapsed", time.Since(start), err)
+				return
+			}
+			log.Info(ctx, "Release alerts check complete", "newAlerts", count, "elapsed", time.Since(start))
+		})
 		return err
 	}
 }

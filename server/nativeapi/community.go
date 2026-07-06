@@ -5,9 +5,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/navidrome/navidrome/log"
+	"github.com/navidrome/navidrome/model"
+	"github.com/navidrome/navidrome/model/request"
 )
 
 func (api *Router) addCommunityRoute(r chi.Router) {
@@ -15,12 +18,12 @@ func (api *Router) addCommunityRoute(r chi.Router) {
 		r.Get("/recent", api.getCommunityRecent)
 		r.Get("/top", api.getCommunityTop)
 		r.Get("/users", api.getCommunityUsers)
-		// Alerts are implemented with the release-alerts feature; these
-		// stubs keep the UI contract stable in the meantime.
-		r.Get("/alerts", getCommunityAlertsStub)
-		r.Post("/alerts/seen", postCommunityAlertsSeenStub)
+		r.Get("/alerts", api.getCommunityAlerts)
+		r.Post("/alerts/seen", api.postCommunityAlertsSeen)
 	})
 }
+
+const alertsSeenAtKey = "communityAlertsSeenAt"
 
 func (api *Router) getCommunityRecent(w http.ResponseWriter, r *http.Request) {
 	entries, err := api.community.Recent(r.Context(),
@@ -55,11 +58,53 @@ func (api *Router) getCommunityUsers(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, users)
 }
 
-func getCommunityAlertsStub(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, r, map[string]any{"alerts": []any{}, "unreadCount": 0})
+// getCommunityAlerts returns release alerts newest-first plus the caller's
+// unread count, computed against their personal "seen" watermark stored in
+// user_props.
+func (api *Router) getCommunityAlerts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	count := intParam(r, "count")
+	if count <= 0 {
+		count = 50
+	}
+	alerts, err := api.ds.ReleaseAlert(ctx).GetAll(count)
+	if err != nil {
+		log.Error(ctx, "Error retrieving release alerts", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	unread := int64(0)
+	if user, ok := request.UserFrom(ctx); ok {
+		watermark := time.Time{}
+		if raw, err := api.ds.UserProps(ctx).Get(user.ID, alertsSeenAtKey); err == nil {
+			if seconds, err := strconv.ParseInt(raw, 10, 64); err == nil {
+				watermark = time.Unix(seconds, 0)
+			}
+		}
+		unread, err = api.ds.ReleaseAlert(ctx).CountSince(watermark)
+		if err != nil {
+			log.Error(ctx, "Error counting unread alerts", err)
+		}
+	}
+	if alerts == nil {
+		alerts = []model.ReleaseAlert{}
+	}
+	writeJSON(w, r, map[string]any{"alerts": alerts, "unreadCount": unread})
 }
 
-func postCommunityAlertsSeenStub(w http.ResponseWriter, _ *http.Request) {
+func (api *Router) postCommunityAlertsSeen(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	user, ok := request.UserFrom(ctx)
+	if !ok {
+		http.Error(w, "no user", http.StatusUnauthorized)
+		return
+	}
+	err := api.ds.UserProps(ctx).Put(user.ID, alertsSeenAtKey, strconv.FormatInt(time.Now().Unix(), 10))
+	if err != nil {
+		log.Error(ctx, "Error saving alerts watermark", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

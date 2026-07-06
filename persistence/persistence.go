@@ -97,6 +97,10 @@ func (s *SQLStore) ExternalRelease(ctx context.Context) model.ExternalReleaseRep
 	return NewExternalReleaseRepository(ctx, s.getDBXBuilder())
 }
 
+func (s *SQLStore) ReleaseAlert(ctx context.Context) model.ReleaseAlertRepository {
+	return NewReleaseAlertRepository(ctx, s.getDBXBuilder())
+}
+
 func (s *SQLStore) Plugin(ctx context.Context) model.PluginRepository {
 	return NewPluginRepository(ctx, s.getDBXBuilder())
 }
