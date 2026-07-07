@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, it, beforeEach, vi } from 'vitest'
 import { Provider } from 'react-redux'
 import { createStore, combineReducers } from 'redux'
-import { activityReducer } from '../reducers'
+import { activityReducer, settingsReducer } from '../reducers'
 import AppBar from './AppBar'
 import config from '../config'
 
@@ -22,6 +22,9 @@ vi.mock('./NowPlayingPanel', () => ({
 vi.mock('./ActivityPanel', () => ({
   default: () => <div data-testid="activity-panel" />,
 }))
+vi.mock('./ReleaseAlertsPanel', () => ({
+  default: () => <div data-testid="release-alerts-panel" />,
+}))
 vi.mock('./PersonalMenu', () => ({
   default: () => <div />,
 }))
@@ -39,9 +42,15 @@ describe('<AppBar />', () => {
   beforeEach(() => {
     config.devActivityPanel = true
     config.enableNowPlaying = true
-    store = createStore(combineReducers({ activity: activityReducer }), {
-      activity: { nowPlayingCount: 0 },
-    })
+    config.enableCommunity = true
+    config.enableReleaseAlerts = true
+    store = createStore(
+      combineReducers({
+        activity: activityReducer,
+        settings: settingsReducer,
+      }),
+      { activity: { nowPlayingCount: 0 } },
+    )
   })
 
   it('renders NowPlayingPanel when enabled', () => {
@@ -61,5 +70,31 @@ describe('<AppBar />', () => {
       </Provider>,
     )
     expect(screen.queryByTestId('now-playing-panel')).toBeNull()
+  })
+
+  it('renders the community sidebar toggle and release alerts bell', () => {
+    render(
+      <Provider store={store}>
+        <AppBar />
+      </Provider>,
+    )
+    expect(
+      screen.getByRole('button', { name: 'community.sidebarTitle' }),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('release-alerts-panel')).toBeInTheDocument()
+  })
+
+  it('hides community elements when disabled', () => {
+    config.enableCommunity = false
+    config.enableReleaseAlerts = false
+    render(
+      <Provider store={store}>
+        <AppBar />
+      </Provider>,
+    )
+    expect(
+      screen.queryByRole('button', { name: 'community.sidebarTitle' }),
+    ).toBeNull()
+    expect(screen.queryByTestId('release-alerts-panel')).toBeNull()
   })
 })

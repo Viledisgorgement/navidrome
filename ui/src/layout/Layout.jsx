@@ -7,9 +7,7 @@ import { HotKeys } from 'react-hotkeys'
 import Menu from './Menu'
 import AppBar from './AppBar'
 import Notification from './Notification'
-import CommunitySidebar, {
-  COMMUNITY_SIDEBAR_WIDTH,
-} from './CommunitySidebar'
+import CommunitySidebar, { COMMUNITY_SIDEBAR_WIDTH } from './CommunitySidebar'
 import useCurrentTheme from '../themes/useCurrentTheme'
 import { useSearchRefocus } from '../common'
 import config from '../config'
@@ -17,8 +15,7 @@ import config from '../config'
 const useStyles = makeStyles({
   root: {
     paddingBottom: (props) => (props.addPadding ? '80px' : 0),
-    paddingRight: (props) =>
-      props.sidebarOpen ? COMMUNITY_SIDEBAR_WIDTH : 0,
+    paddingRight: (props) => (props.sidebarOpen ? COMMUNITY_SIDEBAR_WIDTH : 0),
   },
 })
 

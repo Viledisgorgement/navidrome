@@ -19,6 +19,8 @@ describe('activityReducer', () => {
     serverStart: { version: config.version },
     nowPlayingCount: 0,
     nowPlayingLastUpdate: 0,
+    lastPlayEvent: null,
+    releaseAlerts: 0,
     streamReconnected: 0,
   }
 

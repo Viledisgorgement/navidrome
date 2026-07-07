@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useTranslate } from 'react-admin'
-import {
-  Grid,
-  Tabs,
-  Tab,
-  makeStyles,
-  Typography,
-} from '@material-ui/core'
+import { Grid, Tabs, Tab, makeStyles, Typography } from '@material-ui/core'
 import { httpClient } from '../dataProvider'
 import { Title } from '../common'
 import UserFilter from './UserFilter'

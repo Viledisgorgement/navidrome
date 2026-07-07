@@ -173,7 +173,13 @@ const CommunitySidebar = () => {
   // Refresh on SSE signals and reconnections
   useEffect(() => {
     if (visible && serverUp) fetchNowPlaying()
-  }, [visible, serverUp, nowPlayingLastUpdate, streamReconnected, fetchNowPlaying])
+  }, [
+    visible,
+    serverUp,
+    nowPlayingLastUpdate,
+    streamReconnected,
+    fetchNowPlaying,
+  ])
 
   useEffect(() => {
     if (visible && serverUp) fetchRecent()
@@ -181,12 +187,15 @@ const CommunitySidebar = () => {
 
   // Animate progress bars and fall back to slow polling
   useInterval(() => setNow(Date.now()), visible ? 1000 : null)
-  useInterval(() => {
-    if (visible && serverUp) {
-      fetchNowPlaying()
-      fetchRecent()
-    }
-  }, visible ? 60000 : null)
+  useInterval(
+    () => {
+      if (visible && serverUp) {
+        fetchNowPlaying()
+        fetchRecent()
+      }
+    },
+    visible ? 60000 : null,
+  )
 
   const getArtistLink = useCallback((artistId) => {
     if (!artistId) return null
@@ -202,7 +211,10 @@ const CommunitySidebar = () => {
   }
 
   return (
-    <aside className={classes.sidebar} aria-label={translate('community.sidebarTitle')}>
+    <aside
+      className={classes.sidebar}
+      aria-label={translate('community.sidebarTitle')}
+    >
       <Typography className={classes.sectionTitle}>
         {translate('nowPlaying.title')}
       </Typography>

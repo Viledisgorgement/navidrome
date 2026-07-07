@@ -91,9 +91,7 @@ const TopList = ({ kind, entries, titleKey }) => {
   return (
     <Card className={classes.card}>
       <CardContent>
-        <Typography className={classes.title}>
-          {translate(titleKey)}
-        </Typography>
+        <Typography className={classes.title}>{translate(titleKey)}</Typography>
         {entries.length === 0 ? (
           <Typography className={classes.empty}>
             {translate('community.noPlays')}
@@ -109,7 +107,11 @@ const TopList = ({ kind, entries, titleKey }) => {
                 </Typography>
               )
               return (
-                <ListItem key={entry.id || i} className={classes.item} disableGutters>
+                <ListItem
+                  key={entry.id || i}
+                  className={classes.item}
+                  disableGutters
+                >
                   <span className={classes.rank}>{i + 1}</span>
                   {cover && (
                     <Avatar
@@ -123,7 +125,10 @@ const TopList = ({ kind, entries, titleKey }) => {
                   <div className={classes.content}>
                     {link ? <Link to={link}>{name}</Link> : name}
                     {entry.artist && (
-                      <Typography className={classes.detail} title={entry.artist}>
+                      <Typography
+                        className={classes.detail}
+                        title={entry.artist}
+                      >
                         {entry.artist}
                       </Typography>
                     )}
