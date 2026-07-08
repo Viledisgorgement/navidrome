@@ -1,7 +1,11 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Layout as RALayout, toggleSidebar } from 'react-admin'
-import { makeStyles } from '@material-ui/core/styles'
+import {
+  makeStyles,
+  createTheme,
+  ThemeProvider,
+} from '@material-ui/core/styles'
 import { HotKeys } from 'react-hotkeys'
 import Menu from './Menu'
 import AppBar from './AppBar'
@@ -27,6 +31,10 @@ const useStyles = makeStyles({
 
 const Layout = (props) => {
   const theme = useCurrentTheme()
+  // The sidebar lives outside RALayout's ThemeProvider, so it must be
+  // wrapped in the user's selected theme explicitly or it renders with
+  // the default (light) palette
+  const sidebarTheme = useMemo(() => createTheme(theme), [theme])
   const queue = useSelector((state) => state.player?.queue)
   const classes = useStyles({ addPadding: queue.length > 0 })
   const dispatch = useDispatch()
@@ -49,7 +57,11 @@ const Layout = (props) => {
             notification={Notification}
           />
         </div>
-        {config.enableCommunity && <CommunitySidebar />}
+        {config.enableCommunity && (
+          <ThemeProvider theme={sidebarTheme}>
+            <CommunitySidebar />
+          </ThemeProvider>
+        )}
       </div>
     </HotKeys>
   )

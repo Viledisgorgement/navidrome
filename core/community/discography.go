@@ -25,6 +25,8 @@ type DiscographyRelease struct {
 	AlbumID     string `json:"albumId,omitempty"`
 	ExternalURL string `json:"externalUrl,omitempty"`
 	Source      string `json:"source"`
+	// Lets the UI fetch cover art from the Cover Art Archive
+	MbzReleaseGroupID string `json:"mbzReleaseGroupId,omitempty"`
 }
 
 type Discography struct {
@@ -90,11 +92,12 @@ func (s *service) Discography(ctx context.Context, artistID string, refresh bool
 		sources[release.Source] = true
 
 		entry := DiscographyRelease{
-			Title:       release.Title,
-			Year:        release.Year,
-			ReleaseType: release.ReleaseType,
-			ExternalURL: release.ExternalURL,
-			Source:      release.Source,
+			Title:             release.Title,
+			Year:              release.Year,
+			ReleaseType:       release.ReleaseType,
+			ExternalURL:       release.ExternalURL,
+			Source:            release.Source,
+			MbzReleaseGroupID: release.MbzReleaseGroupID,
 		}
 		if album := byReleaseGroup[release.MbzReleaseGroupID]; release.MbzReleaseGroupID != "" && album != nil {
 			entry.Owned = true

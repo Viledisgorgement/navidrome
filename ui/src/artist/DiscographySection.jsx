@@ -70,6 +70,12 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.action.hover,
     borderRadius: theme.spacing(0.5),
     color: theme.palette.text.disabled,
+    overflow: 'hidden',
+  },
+  ghostCoverImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
   },
   ghostTitle: {
     fontSize: '0.8rem',
@@ -96,6 +102,34 @@ const useStyles = makeStyles((theme) => ({
     color: theme.palette.text.secondary,
   },
 }))
+
+// Album art for releases we don't own, via the Cover Art Archive (keyed
+// by MusicBrainz release group). Falls back to a disc icon when there is
+// no release-group id (Metal Archives-only entries) or no art exists.
+const GhostCover = ({ release }) => {
+  const classes = useStyles()
+  const [failed, setFailed] = useState(false)
+  const rgid = release.mbzReleaseGroupId
+  return (
+    <div className={classes.ghostCover}>
+      {rgid && !failed ? (
+        <img
+          className={classes.ghostCoverImg}
+          src={`https://coverartarchive.org/release-group/${rgid}/front-250`}
+          alt={release.title}
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <AlbumIcon fontSize="large" />
+      )}
+    </div>
+  )
+}
+
+GhostCover.propTypes = {
+  release: PropTypes.object.isRequired,
+}
 
 const DiscographySection = ({ record }) => {
   const classes = useStyles()
@@ -193,9 +227,7 @@ const DiscographySection = ({ record }) => {
                 className={classes.ghostCard}
               >
                 <CardContent className={classes.ghostContent}>
-                  <div className={classes.ghostCover}>
-                    <AlbumIcon fontSize="large" />
-                  </div>
+                  <GhostCover release={release} />
                   <Typography
                     className={classes.ghostTitle}
                     title={release.title}
