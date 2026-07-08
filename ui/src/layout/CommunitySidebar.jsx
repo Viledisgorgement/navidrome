@@ -8,6 +8,7 @@ import {
   ListItem,
   Avatar,
   Divider,
+  Button,
   useTheme,
   useMediaQuery,
 } from '@material-ui/core'
@@ -20,18 +21,27 @@ import config from '../config'
 
 export const COMMUNITY_SIDEBAR_WIDTH = 280
 
+// Entries newer than this show by default; older ones sit behind "Show more"
+const RECENT_WINDOW_MS = 2 * 60 * 60 * 1000
+const PAGE_SIZE = 20
+
 const useStyles = makeStyles((theme) => ({
   sidebar: {
-    position: 'fixed',
-    top: 48,
-    right: 0,
-    bottom: (props) => (props.addPadding ? 80 : 0),
     width: COMMUNITY_SIDEBAR_WIDTH,
+    flexShrink: 0,
+    position: 'sticky',
+    top: 0,
+    alignSelf: 'flex-start',
+    height: '100vh',
     overflowY: 'auto',
+    boxSizing: 'border-box',
     borderLeft: `1px solid ${theme.palette.divider}`,
     backgroundColor: theme.palette.background.default,
-    zIndex: theme.zIndex.appBar - 1,
-    padding: theme.spacing(1),
+    // Clear the fixed AppBar and, when the queue is loaded, the player bar
+    paddingTop: 48,
+    paddingBottom: (props) => (props.addPadding ? 88 : theme.spacing(1)),
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1),
   },
   sectionTitle: {
     fontWeight: 600,
@@ -78,6 +88,10 @@ const useStyles = makeStyles((theme) => ({
   recentUser: {
     fontSize: '0.65rem',
     color: theme.palette.text.disabled,
+  },
+  showMore: {
+    margin: theme.spacing(0.5, 1),
+    fontSize: '0.7rem',
   },
 }))
 
@@ -127,7 +141,7 @@ const CommunitySidebar = () => {
   const dispatch = useDispatch()
   const translate = useTranslate()
   const theme = useTheme()
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'))
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'))
   const open = useSelector((state) => state.settings.communitySidebarOpen)
   const queue = useSelector((state) => state.player?.queue)
   const classes = useStyles({ addPadding: queue?.length > 0 })
@@ -145,6 +159,9 @@ const CommunitySidebar = () => {
 
   const [nowPlaying, setNowPlaying] = useState([])
   const [recent, setRecent] = useState([])
+  // pages > 0 means the user asked for history beyond the 2h window
+  const [pages, setPages] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [now, setNow] = useState(Date.now())
 
   const visible = open && !isSmallScreen && config.enableCommunity
@@ -165,10 +182,15 @@ const CommunitySidebar = () => {
   }, [dispatch])
 
   const fetchRecent = useCallback(() => {
-    httpClient('/api/community/recent?count=20')
-      .then((resp) => setRecent(resp.json || []))
+    const count = PAGE_SIZE * (pages + 1)
+    httpClient(`/api/community/recent?count=${count}`)
+      .then((resp) => {
+        const entries = resp.json || []
+        setRecent(entries)
+        setHasMore(entries.length === count)
+      })
       .catch(() => {})
-  }, [])
+  }, [pages])
 
   // Refresh on SSE signals and reconnections
   useEffect(() => {
@@ -210,6 +232,14 @@ const CommunitySidebar = () => {
     return null
   }
 
+  const cutoff = now - RECENT_WINDOW_MS
+  const expanded = pages > 0
+  const visibleRecent = expanded
+    ? recent
+    : recent.filter((e) => new Date(e.submissionTime).getTime() >= cutoff)
+  const hiddenOlder = recent.length - visibleRecent.length
+  const canShowMore = expanded ? hasMore : hiddenOlder > 0 || hasMore
+
   return (
     <aside
       className={classes.sidebar}
@@ -239,19 +269,39 @@ const CommunitySidebar = () => {
       <Typography className={classes.sectionTitle}>
         {translate('community.recentlyPlayed')}
       </Typography>
-      {recent.length === 0 ? (
+      {visibleRecent.length === 0 ? (
         <Typography className={classes.empty}>
-          {translate('community.noPlays')}
+          {translate('community.noRecentPlays')}
         </Typography>
       ) : (
         <List dense disablePadding>
-          {recent.map((entry, idx) => (
+          {visibleRecent.map((entry, idx) => (
             <RecentEntry
               key={`${entry.userId}-${entry.mediaFileId}-${entry.submissionTime}-${idx}`}
               entry={entry}
             />
           ))}
         </List>
+      )}
+      {canShowMore && (
+        <Button
+          className={classes.showMore}
+          size="small"
+          fullWidth
+          onClick={() => setPages(pages + 1)}
+        >
+          {translate('community.showMore')}
+        </Button>
+      )}
+      {expanded && (
+        <Button
+          className={classes.showMore}
+          size="small"
+          fullWidth
+          onClick={() => setPages(0)}
+        >
+          {translate('community.showRecentOnly')}
+        </Button>
       )}
     </aside>
   )
