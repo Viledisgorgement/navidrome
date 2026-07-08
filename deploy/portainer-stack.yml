@@ -1,0 +1,35 @@
+# Portainer stack for Navidrome Metal Edition
+#
+# Before deploying:
+#   1. Replace YOUR_GITHUB_USER with your GitHub username (lowercase).
+#   2. If the GHCR package is private, add a registry credential in
+#      Portainer (Registries -> ghcr.io, username + a token with
+#      read:packages), or make the package public on GitHub.
+#
+# Web UI: http://<host>:4671  (change the left side of the port mapping
+# if 4671 collides with something else)
+
+services:
+  navidrome-metal:
+    image: ghcr.io/YOUR_GITHUB_USER/navidrome-metal:latest
+    container_name: navidrome-metal
+    restart: unless-stopped
+    # Uncomment to run as a specific user (match your music files' owner)
+    # user: "1000:1000"
+    ports:
+      - "4671:4533"
+    environment:
+      ND_LOGLEVEL: info
+      ND_SCANSCHEDULE: '@every 1h'
+      # --- Metal Edition features ---
+      ND_ENABLECOMMUNITY: 'true'
+      ND_MUSICBRAINZ_ENABLED: 'true'
+      ND_METALARCHIVES_ENABLED: 'true'
+      ND_ENABLERELEASEALERTS: 'true'
+      ND_RELEASEALERTSSCHEDULE: '0 6 * * *'
+    volumes:
+      - navidrome_metal_data:/data
+      - /mnt/data/Music/TestMusic:/music:ro
+
+volumes:
+  navidrome_metal_data:

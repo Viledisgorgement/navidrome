@@ -56,6 +56,16 @@ enabled) for library band names. New alerts are broadcast live via SSE.
 Upstream's `ND_ENABLESCROBBLEHISTORY` (default `true`) must stay on — the community
 features read from the `scrobbles` table it populates.
 
+## Deployment
+
+Pushing the `metal-edition` branch to GitHub triggers
+`.github/workflows/docker-metal.yml`, which builds the standard Navidrome
+Docker image (Alpine + ffmpeg) from this branch and publishes it to
+`ghcr.io/<owner>/navidrome-metal:latest`. Deploy it with
+`deploy/portainer-stack.yml` (edit the image owner, host port, and music
+path first). It coexists with a stock Navidrome instance — separate image,
+container name, data volume, and port.
+
 ## Maintenance notes
 
 - New code lives in new files: `core/community/`, `adapters/musicbrainz/`,
