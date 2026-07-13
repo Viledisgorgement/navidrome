@@ -37,6 +37,9 @@ const useStyles = makeStyles((theme) => ({
     boxSizing: 'border-box',
     borderLeft: `1px solid ${theme.palette.divider}`,
     backgroundColor: theme.palette.background.default,
+    // The sidebar renders outside RALayout's CssBaseline, so text color
+    // must be set explicitly or titles inherit the browser default (black)
+    color: theme.palette.text.primary,
     // Clear the fixed AppBar and, when the queue is loaded, the player bar
     paddingTop: 48,
     paddingBottom: (props) => (props.addPadding ? 88 : theme.spacing(1)),

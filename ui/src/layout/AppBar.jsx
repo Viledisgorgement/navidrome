@@ -8,6 +8,7 @@ import {
 } from 'react-admin'
 import { MdInfo, MdPerson, MdSupervisorAccount, MdGroups } from 'react-icons/md'
 import { useSelector, useDispatch } from 'react-redux'
+import { Link } from 'react-router-dom'
 import {
   makeStyles,
   MenuItem,
@@ -15,8 +16,10 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  Typography,
 } from '@material-ui/core'
 import ViewListIcon from '@material-ui/icons/ViewList'
+import HomeIcon from '@material-ui/icons/Home'
 import { Dialogs } from '../dialogs/Dialogs'
 import { AboutDialog } from '../dialogs'
 import PersonalMenu from './PersonalMenu'
@@ -25,6 +28,7 @@ import NowPlayingPanel from './NowPlayingPanel'
 import ReleaseAlertsPanel from './ReleaseAlertsPanel'
 import UserMenu from './UserMenu'
 import { toggleCommunitySidebar } from '../actions'
+import albumLists from '../album/albumLists'
 import config from '../config'
 
 const useStyles = makeStyles(
@@ -166,8 +170,39 @@ const CustomUserMenu = ({ onClick, ...rest }) => {
   )
 }
 
+// Home goes to Recently Added — the preferred landing view
+const HomeButton = () => {
+  const translate = useTranslate()
+  return (
+    <Tooltip title={translate('ra.page.dashboard', { _: 'Home' })}>
+      <IconButton
+        color="inherit"
+        component={Link}
+        to={`/album/recentlyAdded?${albumLists.recentlyAdded.params}`}
+        aria-label="home"
+      >
+        <HomeIcon />
+      </IconButton>
+    </Tooltip>
+  )
+}
+
 const AppBar = (props) => (
-  <RAAppBar {...props} container={Fragment} userMenu={<CustomUserMenu />} />
+  <RAAppBar {...props} container={Fragment} userMenu={<CustomUserMenu />}>
+    <HomeButton />
+    {/* Children replace react-admin's default title, so re-add it */}
+    <Typography
+      variant="h6"
+      color="inherit"
+      id="react-admin-title"
+      style={{
+        flex: 1,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}
+    />
+  </RAAppBar>
 )
 
 export default AppBar

@@ -19,6 +19,8 @@ services:
     environment:
       ND_LOGLEVEL: info
       ND_SCANSCHEDULE: '@every 1h'
+      # Default library on first boot; add the others in Settings -> Libraries
+      ND_MUSICFOLDER: /music/main
       # --- Metal Edition features ---
       ND_ENABLECOMMUNITY: 'true'
       ND_MUSICBRAINZ_ENABLED: 'true'
@@ -27,7 +29,8 @@ services:
       ND_RELEASEALERTSSCHEDULE: '0 6 * * *'
     volumes:
       - navidrome_metal_data:/data
-      - /mnt/data/Music/TestMusic:/music:ro
+      - /mnt/data/Music/MainMusic:/music/main:ro
+      - '/mnt/data/Music/Video Game Music:/music/vgm:ro'
 
 volumes:
   navidrome_metal_data:
