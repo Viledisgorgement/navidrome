@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/navidrome/navidrome/adapters/metalarchives"
 	"github.com/navidrome/navidrome/adapters/musicbrainz"
 	"github.com/navidrome/navidrome/conf"
@@ -69,12 +68,7 @@ func (c *AlertChecker) Check(ctx context.Context) (int, error) {
 }
 
 func (c *AlertChecker) checkMusicBrainz(ctx context.Context) (int, error) {
-	artists, err := c.ds.Artist(ctx).GetAll(model.QueryOptions{
-		Filters: squirrel.And{
-			squirrel.NotEq{"artist.mbz_artist_id": ""},
-			squirrel.NotEq{"artist.mbz_artist_id": nil},
-		},
-	})
+	artists, err := c.ds.Artist(ctx).GetAll()
 	if err != nil {
 		return 0, err
 	}
@@ -87,11 +81,23 @@ func (c *AlertChecker) checkMusicBrainz(ctx context.Context) (int, error) {
 		if ctx.Err() != nil {
 			return newAlerts, ctx.Err()
 		}
+		// mbid from file tags, or one resolved earlier by the discography
+		// name search; artists with neither are skipped (viewing an artist's
+		// missing albums once is enough to enroll them)
+		mbid := artist.MbzArtistID
+		if mbid == "" {
+			if resolved, err := releaseRepo.GetArtistInfo(artist.ID, model.ReleaseSourceMusicBrainz); err == nil {
+				mbid = resolved.ExternalArtistID
+			}
+		}
+		if mbid == "" {
+			continue
+		}
 		info, err := releaseRepo.GetArtistInfo(artist.ID, alertSource)
 		if err == nil && time.Since(info.LastFetchedAt) < alertCheckInterval {
 			continue
 		}
-		groups, err := c.mbz.ReleaseGroupsByArtist(ctx, artist.MbzArtistID)
+		groups, err := c.mbz.ReleaseGroupsByArtist(ctx, mbid)
 		status := "ok"
 		if err != nil {
 			log.Debug(ctx, "Release check: MusicBrainz fetch failed", "artist", artist.Name, err)
@@ -123,7 +129,7 @@ func (c *AlertChecker) checkMusicBrainz(ctx context.Context) (int, error) {
 		_ = releaseRepo.PutArtistInfo(&model.ExternalArtistInfo{
 			ArtistID:         artist.ID,
 			Source:           alertSource,
-			ExternalArtistID: artist.MbzArtistID,
+			ExternalArtistID: mbid,
 			LastFetchedAt:    time.Now(),
 			FetchStatus:      status,
 		})

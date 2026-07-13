@@ -7,9 +7,11 @@ package musicbrainz
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -33,6 +35,9 @@ func rateLimit(interval time.Duration) {
 	}
 	lastCall = time.Now()
 }
+
+// ErrArtistNotFound means the name search returned no unambiguous match
+var ErrArtistNotFound = errors.New("musicbrainz: artist not found")
 
 type ReleaseGroup struct {
 	ID               string   `json:"id"`
@@ -60,6 +65,58 @@ func NewClient(baseURL string) *Client {
 		baseURL: baseURL,
 		hc:      &http.Client{Timeout: 15 * time.Second},
 	}
+}
+
+type artistSearchResponse struct {
+	Artists []struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Score int    `json:"score"`
+	} `json:"artists"`
+}
+
+// SearchArtist resolves an artist name to a MusicBrainz artist id, for
+// libraries whose files carry no mbz tags. Only a unique exact-name match
+// with a perfect search score is accepted; anything ambiguous returns
+// ErrArtistNotFound rather than guessing.
+func (c *Client) SearchArtist(ctx context.Context, name string) (string, error) {
+	rateLimit(time.Second)
+	escaped := strings.ReplaceAll(name, `"`, `\"`)
+	params := url.Values{}
+	params.Set("query", fmt.Sprintf(`artist:"%s"`, escaped))
+	params.Set("limit", "5")
+	params.Set("fmt", "json")
+	reqURL := fmt.Sprintf("%s/ws/2/artist?%s", c.baseURL, params.Encode())
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", fmt.Sprintf("NavidromeMetalEdition/%s (https://github.com/navidrome/navidrome)", consts.Version))
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("musicbrainz: artist search status %d", resp.StatusCode)
+	}
+	var parsed artistSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+		return "", err
+	}
+	var matches []string
+	for _, artist := range parsed.Artists {
+		if artist.Score == 100 && strings.EqualFold(strings.TrimSpace(artist.Name), strings.TrimSpace(name)) {
+			matches = append(matches, artist.ID)
+		}
+	}
+	if len(matches) != 1 {
+		return "", ErrArtistNotFound
+	}
+	return matches[0], nil
 }
 
 // ReleaseGroupsByArtist returns all release groups credited to the given

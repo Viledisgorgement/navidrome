@@ -11,6 +11,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/navidrome/navidrome/adapters/metalarchives"
+	"github.com/navidrome/navidrome/adapters/musicbrainz"
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
 )
@@ -82,14 +83,25 @@ func (s *service) Discography(ctx context.Context, artistID string, refresh bool
 
 	result := &Discography{ArtistID: artistID, ArtistName: artist.Name}
 	sources := map[string]bool{}
-	seen := map[string]bool{}
+	seen := map[string]int{}
 	for _, release := range cached {
 		key := fmt.Sprintf("%s|%d", normalizeTitle(release.Title), release.Year)
-		if seen[key] {
+		sources[release.Source] = true
+		if idx, dup := seen[key]; dup {
+			// Metal Archives entries win the dedupe (sorted first), but the
+			// MusicBrainz duplicate still contributes its release-group id —
+			// it drives cover art and exact ownership matching
+			existing := &result.Releases[idx]
+			if existing.MbzReleaseGroupID == "" && release.MbzReleaseGroupID != "" {
+				existing.MbzReleaseGroupID = release.MbzReleaseGroupID
+				if album := byReleaseGroup[release.MbzReleaseGroupID]; !existing.Owned && album != nil {
+					existing.Owned = true
+					existing.AlbumID = album.ID
+				}
+			}
 			continue
 		}
-		seen[key] = true
-		sources[release.Source] = true
+		seen[key] = len(result.Releases)
 
 		entry := DiscographyRelease{
 			Title:             release.Title,
@@ -134,18 +146,39 @@ func (s *service) needsRefresh(repo model.ExternalReleaseRepository, artistID, s
 }
 
 func (s *service) refreshMusicBrainz(ctx context.Context, artist *model.Artist, repo model.ExternalReleaseRepository) {
-	info := &model.ExternalArtistInfo{
-		ArtistID:         artist.ID,
-		Source:           model.ReleaseSourceMusicBrainz,
-		ExternalArtistID: artist.MbzArtistID,
-		LastFetchedAt:    time.Now(),
+	info, err := repo.GetArtistInfo(artist.ID, model.ReleaseSourceMusicBrainz)
+	if err != nil {
+		info = &model.ExternalArtistInfo{
+			ArtistID: artist.ID,
+			Source:   model.ReleaseSourceMusicBrainz,
+		}
 	}
-	if artist.MbzArtistID == "" {
-		info.FetchStatus = "no_mbid"
-		_ = repo.PutArtistInfo(info)
-		return
+	info.LastFetchedAt = time.Now()
+
+	// Prefer the mbid from the files' tags; otherwise fall back to a
+	// previously resolved id, then to a one-time name search
+	mbid := artist.MbzArtistID
+	if mbid == "" {
+		mbid = info.ExternalArtistID
 	}
-	groups, err := s.mbz.ReleaseGroupsByArtist(ctx, artist.MbzArtistID)
+	if mbid == "" {
+		mbid, err = s.mbz.SearchArtist(ctx, artist.Name)
+		if errors.Is(err, musicbrainz.ErrArtistNotFound) {
+			info.FetchStatus = "not_found"
+			_ = repo.PutArtistInfo(info)
+			return
+		}
+		if err != nil {
+			log.Warn(ctx, "MusicBrainz artist search failed", "artist", artist.Name, err)
+			info.FetchStatus = "error"
+			_ = repo.PutArtistInfo(info)
+			return
+		}
+		log.Info(ctx, "Resolved artist on MusicBrainz by name", "artist", artist.Name, "mbid", mbid)
+	}
+	info.ExternalArtistID = mbid
+
+	groups, err := s.mbz.ReleaseGroupsByArtist(ctx, mbid)
 	if err != nil {
 		log.Warn(ctx, "Error fetching MusicBrainz discography", "artist", artist.Name, "mbid", artist.MbzArtistID, err)
 		info.FetchStatus = "error"
