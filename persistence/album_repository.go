@@ -111,24 +111,27 @@ func NewAlbumRepository(ctx context.Context, db dbx.Builder) model.AlbumReposito
 		"recently_added": recentlyAddedSort(),
 		"starred_at":     "starred, starred_at",
 		"rated_at":       "rating, rated_at",
+		// Last play across ALL users (community view), from the scrobbles log
+		"recently_played_everyone": "(select max(s.submission_time) from scrobbles s join media_file mf on mf.id = s.media_file_id where mf.album_id = album.id)",
 	})
 	return r
 }
 
 var albumFilters = sync.OnceValue(func() map[string]filterFunc {
 	filters := map[string]filterFunc{
-		"id":              idFilter("album"),
-		"name":            fullTextFilter("album", "mbz_album_id", "mbz_release_group_id"),
-		"compilation":     booleanFilter,
-		"artist_id":       artistFilter,
-		"year":            yearFilter,
-		"recently_played": recentlyPlayedFilter,
-		"starred":         annotationBoolFilter("starred"),
-		"has_rating":      annotationBoolFilter("rating"),
-		"missing":         booleanFilter,
-		"genre_id":        tagIDFilter,
-		"role_total_id":   allRolesFilter,
-		"library_id":      libraryIdFilter,
+		"id":               idFilter("album"),
+		"name":             fullTextFilter("album", "mbz_album_id", "mbz_release_group_id"),
+		"compilation":      booleanFilter,
+		"artist_id":        artistFilter,
+		"year":             yearFilter,
+		"recently_played":  recentlyPlayedFilter,
+		"played_by_anyone": playedByAnyoneFilter,
+		"starred":          annotationBoolFilter("starred"),
+		"has_rating":       annotationBoolFilter("rating"),
+		"missing":          booleanFilter,
+		"genre_id":         tagIDFilter,
+		"role_total_id":    allRolesFilter,
+		"library_id":       libraryIdFilter,
 	}
 	// Add all album tags as filters
 	for tag := range model.AlbumLevelTags() {
@@ -151,6 +154,12 @@ func recentlyAddedSort() string {
 
 func recentlyPlayedFilter(string, any) Sqlizer {
 	return Gt{"play_count": 0}
+}
+
+// playedByAnyoneFilter matches albums with at least one recorded play by
+// any user (community recently-played list)
+func playedByAnyoneFilter(string, any) Sqlizer {
+	return Expr("exists (select 1 from scrobbles s join media_file mf on mf.id = s.media_file_id where mf.album_id = album.id)")
 }
 
 func yearFilter(_ string, value any) Sqlizer {

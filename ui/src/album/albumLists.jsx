@@ -11,6 +11,8 @@ import StarBorderIcon from '@material-ui/icons/StarBorder'
 import AlbumOutlinedIcon from '@material-ui/icons/AlbumOutlined'
 import LibraryAddOutlinedIcon from '@material-ui/icons/LibraryAddOutlined'
 import VideoLibraryOutlinedIcon from '@material-ui/icons/VideoLibraryOutlined'
+import PeopleIcon from '@material-ui/icons/People'
+import PeopleOutlineIcon from '@material-ui/icons/PeopleOutline'
 import config from '../config'
 import DynamicMenuIcon from '../layout/DynamicMenuIcon'
 
@@ -73,6 +75,19 @@ const albumLists = {
     ),
     params: 'sort=play_date&order=DESC&filter={"recently_played":true}',
   },
+  ...(config.enableCommunity && {
+    communityRecentlyPlayed: {
+      icon: (
+        <DynamicMenuIcon
+          path={'album/communityRecentlyPlayed'}
+          icon={PeopleOutlineIcon}
+          activeIcon={PeopleIcon}
+        />
+      ),
+      params:
+        'sort=recently_played_everyone&order=DESC&filter={"played_by_anyone":true}',
+    },
+  }),
   mostPlayed: {
     icon: <RepeatIcon />,
     params: 'sort=play_count&order=DESC&filter={"recently_played":true}',
