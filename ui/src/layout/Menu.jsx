@@ -6,9 +6,8 @@ import { useTranslate, MenuItemLink, getResources } from 'react-admin'
 import ViewListIcon from '@material-ui/icons/ViewList'
 import AlbumIcon from '@material-ui/icons/Album'
 import PeopleIcon from '@material-ui/icons/People'
-import SubMenu from './SubMenu'
 import { humanize, pluralize } from 'inflection'
-import albumLists from '../album/albumLists'
+import { defaultAlbumList } from '../album/albumLists'
 import PlaylistsSubMenu from './PlaylistsSubMenu'
 import LibrarySelector from '../common/LibrarySelector'
 import config from '../config'
@@ -56,14 +55,9 @@ const Menu = ({ dense = false }) => {
 
   // TODO State is not persisted in mobile when you close the sidebar menu. Move to redux?
   const [state, setState] = useState({
-    menuAlbumList: true,
     menuPlaylists: true,
     menuSharedPlaylists: true,
   })
-
-  const handleToggle = (menu) => {
-    setState((state) => ({ ...state, [menu]: !state[menu] }))
-  }
 
   const renderResourceMenuItemLink = (resource) => (
     <MenuItemLink
@@ -77,32 +71,6 @@ const Menu = ({ dense = false }) => {
     />
   )
 
-  const renderAlbumMenuItemLink = (type, al) => {
-    const resource = resources.find((r) => r.name === 'album')
-    if (!resource) {
-      return null
-    }
-
-    const albumListAddress = `/album/${type}`
-
-    const name = translate(`resources.album.lists.${type || 'default'}`, {
-      _: translatedResourceName(resource, translate),
-    })
-
-    return (
-      <MenuItemLink
-        key={albumListAddress}
-        to={albumListAddress}
-        activeClassName={classes.active}
-        primaryText={name}
-        leftIcon={al.icon || <ViewListIcon />}
-        sidebarIsOpen={open}
-        dense={dense}
-        exact
-      />
-    )
-  }
-
   const subItems = (subMenu) => (resource) =>
     resource.hasList && resource.options && resource.options.subMenu === subMenu
 
@@ -114,18 +82,16 @@ const Menu = ({ dense = false }) => {
       })}
     >
       {open && <LibrarySelector />}
-      <SubMenu
-        handleToggle={() => handleToggle('menuAlbumList')}
-        isOpen={state.menuAlbumList}
+      {/* Album list types moved to the Airsonic-style nav at the top of
+          the album page; the sidebar keeps a single entry point */}
+      <MenuItemLink
+        to={`/album/${defaultAlbumList}`}
+        activeClassName={classes.active}
+        primaryText={translate('menu.albumList')}
+        leftIcon={<AlbumIcon />}
         sidebarIsOpen={open}
-        name="menu.albumList"
-        icon={<AlbumIcon />}
         dense={dense}
-      >
-        {Object.keys(albumLists).map((type) =>
-          renderAlbumMenuItemLink(type, albumLists[type]),
-        )}
-      </SubMenu>
+      />
       {resources.filter(subItems(undefined)).map(renderResourceMenuItemLink)}
       {config.enableCommunity && (
         <MenuItemLink

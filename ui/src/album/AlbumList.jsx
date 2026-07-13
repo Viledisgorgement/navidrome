@@ -26,6 +26,7 @@ import {
   useSetToggleableFields,
 } from '../common'
 import AlbumListActions from './AlbumListActions'
+import AlbumListNav from './AlbumListNav'
 import AlbumTableView from './AlbumTableView'
 import AlbumGridView from './AlbumGridView'
 import albumLists, { defaultAlbumList } from './albumLists'
@@ -233,6 +234,7 @@ const AlbumList = (props) => {
 
   return (
     <>
+      <AlbumListNav current={albumListType} />
       <List
         {...props}
         exporter={false}
