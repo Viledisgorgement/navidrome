@@ -310,7 +310,10 @@ func (p *playTracker) ReportPlayback(ctx context.Context, params ReportPlaybackP
 		info.PositionMs = params.PositionMs
 		info.PlaybackRate = params.PlaybackRate
 		info.LastReport = now
-		ttl := 30 * time.Minute
+		// Paused sessions drop out of Now Playing after 10 minutes instead of
+		// upstream's 30 - they read as stale ghosts in the community sidebar.
+		// Resuming re-adds the session immediately, so nothing is lost.
+		ttl := 10 * time.Minute
 		if params.State == StatePlaying {
 			ttl = remainingTTL(info.MediaFile.Duration, params.PositionMs, params.PlaybackRate)
 		}

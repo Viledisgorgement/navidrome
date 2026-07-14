@@ -135,7 +135,9 @@ describe('<NowPlayingPanel />', () => {
 
     fireEvent.click(screen.getByRole('button'))
     await waitFor(() => {
-      expect(screen.getByText('u1 (Chrome Browser)')).toBeInTheDocument()
+      // Username is emphasized in its own element, player name follows
+      expect(screen.getByText('u1')).toBeInTheDocument()
+      expect(screen.getByText(/Chrome Browser/)).toBeInTheDocument()
     })
   })
 

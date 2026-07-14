@@ -89,8 +89,13 @@ const useStyles = makeStyles((theme) => ({
     whiteSpace: 'nowrap',
   },
   recentUser: {
-    fontSize: '0.65rem',
-    color: theme.palette.text.disabled,
+    fontSize: '0.7rem',
+    color: theme.palette.text.secondary,
+  },
+  recentUserName: {
+    fontSize: '0.8rem',
+    fontWeight: 700,
+    color: theme.palette.text.primary,
   },
   showMore: {
     margin: theme.spacing(0.5, 1),
@@ -133,7 +138,9 @@ const RecentEntry = ({ entry }) => {
           {entry.artist}
         </Typography>
         <Typography className={classes.recentUser}>
-          {entry.userName} · {timeAgo(entry.submissionTime, translate)}
+          <span className={classes.recentUserName}>{entry.userName}</span>
+          {' · '}
+          {timeAgo(entry.submissionTime, translate)}
         </Typography>
       </div>
     </ListItem>

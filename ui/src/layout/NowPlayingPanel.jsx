@@ -136,9 +136,14 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   userInfo: {
-    fontSize: '0.65rem',
-    color: theme.palette.text.disabled,
+    fontSize: '0.75rem',
+    color: theme.palette.text.secondary,
     marginTop: theme.spacing(0.25),
+  },
+  userName: {
+    fontSize: '0.85rem',
+    fontWeight: 700,
+    color: theme.palette.text.primary,
   },
   badge: {
     '& .MuiBadge-badge': {
@@ -265,9 +270,9 @@ const NowPlayingItem = React.memo(
             </span>
           </div>
           <Typography className={classes.userInfo}>
-            {nowPlayingEntry.username}
+            <span className={classes.userName}>{nowPlayingEntry.username}</span>
             {nowPlayingEntry.playerName
-              ? ` (${nowPlayingEntry.playerName})`
+              ? ` · ${nowPlayingEntry.playerName}`
               : ''}
           </Typography>
         </div>
