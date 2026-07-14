@@ -12,8 +12,12 @@ const useStyles = makeStyles(
       display: 'flex',
       flexWrap: 'wrap',
       alignItems: 'center',
-      padding: theme.spacing(1.5, 2, 0, 2),
+      padding: theme.spacing(1.5, 2, 1, 2),
       fontSize: '0.875rem',
+      // The list's filter toolbar overlaps the nav's lower edge with a
+      // transparent margin, eating clicks — keep the links on top
+      position: 'relative',
+      zIndex: 5,
     },
     link: {
       color: theme.palette.text.secondary,

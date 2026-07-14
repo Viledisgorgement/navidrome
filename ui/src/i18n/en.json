@@ -733,6 +733,10 @@
       "all": "All time"
     }
   },
+  "search": {
+    "artists": "Search artists…",
+    "albums": "Search albums…"
+  },
   "releaseAlerts": {
     "title": "New Releases",
     "empty": "No release alerts yet — they'll appear when your artists announce new albums"

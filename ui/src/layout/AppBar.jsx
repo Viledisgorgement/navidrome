@@ -27,6 +27,7 @@ import ActivityPanel from './ActivityPanel'
 import NowPlayingPanel from './NowPlayingPanel'
 import ReleaseAlertsPanel from './ReleaseAlertsPanel'
 import UserMenu from './UserMenu'
+import AppBarSearch from './AppBarSearch'
 import { toggleCommunitySidebar } from '../actions'
 import albumLists from '../album/albumLists'
 import config from '../config'
@@ -202,6 +203,7 @@ const AppBar = (props) => (
         whiteSpace: 'nowrap',
       }}
     />
+    <AppBarSearch />
   </RAAppBar>
 )
 

@@ -53,7 +53,12 @@ const AlbumFilter = (props) => {
   const isAdmin = permissions === 'admin'
   return (
     <Filter {...props} variant={'outlined'}>
-      <SearchInput id="search" source="name" alwaysOn />
+      <SearchInput
+        id="search"
+        source="name"
+        alwaysOn
+        placeholder={translate('search.albums')}
+      />
       <ReferenceInput
         label={translate('resources.album.fields.artist')}
         source="artist_id"

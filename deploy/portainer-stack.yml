@@ -21,6 +21,13 @@ services:
       ND_SCANSCHEDULE: '@every 1h'
       # Default library on first boot; add the others in Settings -> Libraries
       ND_MUSICFOLDER: /music/main
+      # Serve under /navidrome (matches the cloudflared public hostname path)
+      ND_BASEURL: /navidrome
+      # Last.fm: set LASTFM_APIKEY / LASTFM_SECRET as stack environment
+      # variables in Portainer (kept out of this public file)
+      ND_LASTFM_ENABLED: 'true'
+      ND_LASTFM_APIKEY: ${LASTFM_APIKEY:-}
+      ND_LASTFM_SECRET: ${LASTFM_SECRET:-}
       # --- Metal Edition features ---
       ND_ENABLECOMMUNITY: 'true'
       ND_MUSICBRAINZ_ENABLED: 'true'
