@@ -14,6 +14,39 @@
 Navidrome is an open source web-based music collection server and streamer. It gives you freedom to listen to your
 music collection from any browser or mobile device. It's like your personal Spotify!
 
+---
+
+## 🤘 Metal Edition (this fork)
+
+A personal fork that turns Navidrome into a small social music server, with some
+metal-focused collection tools on top. All changes are additive and gated behind
+config flags — see [METAL_EDITION.md](METAL_EDITION.md) for full details and
+configuration. Built with [Claude Code](https://claude.com/claude-code).
+
+**What's different from upstream:**
+
+- **Community sidebar** — persistent panel showing what everyone is playing right
+  now (with live progress) and the server-wide recently-played feed, updated live
+  over SSE
+- **Community page** (`/community`) — top albums/artists/songs across all users
+  (7/30/90 days or all time), per-user filters, and a paged feed of everyone's plays
+- **Server chat** — shared chat box on the Community page with image support
+  (paste or attach), live delivery to all connected users, delete your own
+  messages (admins any)
+- **Missing albums** — artist pages can show the artist's full external discography
+  as dimmed "ghost cards" for releases you don't own, sourced from MusicBrainz and
+  (opt-in) Metal Archives — great for catching demos, splits and EPs
+- **New release alerts** — a bell in the app bar with per-user unread badges; a
+  daily job checks library artists for new/upcoming releases on MusicBrainz and
+  Metal Archives' upcoming-releases page
+- **"Recently Played – Everyone"** album list and UI touches: album-type top
+  navigation, Home button, artist search in the app bar, true reshuffle on Random
+
+Work branch is [`metal-edition`](../../tree/metal-edition); container images are
+published to GHCR with `:latest` (staging) and `:stable` (production) channels.
+
+---
+
 
 **Note**: The `master` branch may be in an unstable or even broken state during development. 
 Please use [releases](https://github.com/navidrome/navidrome/releases) instead of 
