@@ -16,7 +16,7 @@ music collection from any browser or mobile device. It's like your personal Spot
 
 ---
 
-## 🤘 Metal Edition (this fork)
+## Metal Edition (this fork)
 
 A personal fork that turns Navidrome into a small social music server, with some
 metal-focused collection tools on top. All changes are additive and gated behind
