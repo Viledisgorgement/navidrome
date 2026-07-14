@@ -56,7 +56,13 @@ const AlbumListNav = ({ current }) => {
           {idx > 0 && <span className={classes.separator}>|</span>}
           <Link
             className={clsx(classes.link, current === type && classes.active)}
-            to={`/album/${type}?${albumLists[type].params}`}
+            // Random must arrive without params: AlbumList then bumps the
+            // random seed and redirects, so every click reshuffles
+            to={
+              type === 'random'
+                ? '/album/random'
+                : `/album/${type}?${albumLists[type].params}`
+            }
           >
             {translate(`resources.album.lists.${type}`, { smart_count: 2 })}
           </Link>
