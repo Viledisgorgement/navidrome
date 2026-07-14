@@ -58,13 +58,24 @@ features read from the `scrobbles` table it populates.
 
 ## Deployment
 
-Pushing the `metal-edition` branch to GitHub triggers
-`.github/workflows/docker-metal.yml`, which builds the standard Navidrome
-Docker image (Alpine + ffmpeg) from this branch and publishes it to
-`ghcr.io/<owner>/navidrome-metal:latest`. Deploy it with
-`deploy/portainer-stack.yml` (edit the image owner, host port, and music
-path first). It coexists with a stock Navidrome instance — separate image,
-container name, data volume, and port.
+`.github/workflows/docker-metal.yml` builds the standard Navidrome Docker
+image (Alpine + ffmpeg) on every push, in two channels:
+
+| Branch | Image tag | Stack file | Purpose |
+|--------|-----------|------------|---------|
+| `metal-edition` | `:latest` | `deploy/portainer-stack-staging.yml` (port 4672) | staging — every change lands here first |
+| `metal-stable` | `:stable` | `deploy/portainer-stack.yml` (port 4671) | production |
+
+Promotion: after testing on staging, fast-forward the stable branch and
+re-pull the prod stack:
+
+```
+git push origin metal-edition:metal-stable
+```
+
+Both stacks coexist with a stock Navidrome instance — separate images,
+container names, data volumes, and ports. The staging stack mounts the
+same music read-only but keeps its own database.
 
 ## Maintenance notes
 

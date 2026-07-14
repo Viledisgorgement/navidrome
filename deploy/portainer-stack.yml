@@ -9,7 +9,10 @@
 
 services:
   navidrome-metal:
-    image: ghcr.io/viledisgorgement/navidrome-metal:latest
+    # Production tracks the :stable tag, built from the metal-stable branch.
+    # Changes land on :latest (staging stack) first and are promoted after
+    # testing.
+    image: ghcr.io/viledisgorgement/navidrome-metal:stable
     container_name: navidrome-metal
     restart: unless-stopped
     # Uncomment to run as a specific user (match your music files' owner)

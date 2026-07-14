@@ -2,7 +2,7 @@ name: Metal Edition Docker image
 
 on:
   push:
-    branches: [metal-edition]
+    branches: [metal-edition, metal-stable]
   workflow_dispatch:
 
 permissions:
@@ -15,9 +15,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compute lowercase image name
+      # Two release channels:
+      #   metal-edition -> :latest  (staging)
+      #   metal-stable  -> :stable  (production)
+      - name: Compute image tags
         id: image
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/navidrome-metal" >> "$GITHUB_OUTPUT"
+        run: |
+          NAME="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/navidrome-metal"
+          if [ "${GITHUB_REF_NAME}" = "metal-stable" ]; then
+            echo "tags=${NAME}:stable,${NAME}:stable-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tags=${NAME}:latest,${NAME}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: docker/setup-buildx-action@v3
 
@@ -33,11 +42,9 @@ jobs:
           target: final
           push: true
           platforms: linux/amd64
-          tags: |
-            ${{ steps.image.outputs.name }}:latest
-            ${{ steps.image.outputs.name }}:${{ github.sha }}
+          tags: ${{ steps.image.outputs.tags }}
           build-args: |
             GIT_SHA=${{ github.sha }}
-            GIT_TAG=metal-edition
+            GIT_TAG=${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
