@@ -25,6 +25,7 @@ const setupHandlers = (stream, dispatchFn) => {
   }
   if (config.enableCommunity) {
     stream.addEventListener('playEvent', eventHandler(dispatchFn))
+    stream.addEventListener('chatMessage', eventHandler(dispatchFn))
   }
   if (config.enableReleaseAlerts) {
     stream.addEventListener('releaseAlert', eventHandler(dispatchFn))
@@ -87,6 +88,7 @@ const startEventStreamLegacy = async (dispatchFn) => {
       }
       if (config.enableCommunity) {
         newStream.addEventListener('playEvent', eventHandler(dispatchFn))
+        newStream.addEventListener('chatMessage', eventHandler(dispatchFn))
       }
       if (config.enableReleaseAlerts) {
         newStream.addEventListener('releaseAlert', eventHandler(dispatchFn))

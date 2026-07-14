@@ -28,6 +28,7 @@ type MockDataStore struct {
 	MockedScrobble        model.ScrobbleRepository
 	MockedExternalRelease model.ExternalReleaseRepository
 	MockedReleaseAlert    model.ReleaseAlertRepository
+	MockedChatMessage     model.ChatMessageRepository
 	MockedRadio           model.RadioRepository
 	MockedPlugin          model.PluginRepository
 	scrobbleBufferMu      sync.Mutex
@@ -247,6 +248,17 @@ func (db *MockDataStore) ReleaseAlert(ctx context.Context) model.ReleaseAlertRep
 	}
 	db.MockedReleaseAlert = &MockReleaseAlertRepo{}
 	return db.MockedReleaseAlert
+}
+
+func (db *MockDataStore) ChatMessage(ctx context.Context) model.ChatMessageRepository {
+	if db.MockedChatMessage != nil {
+		return db.MockedChatMessage
+	}
+	if db.RealDS != nil {
+		return db.RealDS.ChatMessage(ctx)
+	}
+	db.MockedChatMessage = &MockChatMessageRepo{}
+	return db.MockedChatMessage
 }
 
 func (db *MockDataStore) Radio(ctx context.Context) model.RadioRepository {

@@ -7,6 +7,7 @@ import { Title } from '../common'
 import UserFilter from './UserFilter'
 import TopList from './TopList'
 import PlayFeed from './PlayFeed'
+import ChatBox from './ChatBox'
 
 const FEED_PAGE_SIZE = 30
 
@@ -144,7 +145,10 @@ const CommunityPage = () => {
             titleKey="community.topSongs"
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
+          <ChatBox />
+        </Grid>
+        <Grid item xs={12} md={6}>
           <PlayFeed entries={feed} hasMore={hasMore} onLoadMore={loadMore} />
         </Grid>
       </Grid>

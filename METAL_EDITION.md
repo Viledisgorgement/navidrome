@@ -41,6 +41,14 @@ daily) checks each library artist for release groups dated in the last 14 days o
 announced for the future, and scans Metal Archives' upcoming-releases page (when
 enabled) for library band names. New alerts are broadcast live via SSE.
 
+### Server chat
+A chat box on the `/community` page shared by everyone on the server. Supports text
+and images — paste an image straight into the input (or attach one with the photo
+button), preview it, and send. Messages appear live for all connected users via SSE.
+Users can delete their own messages; admins can delete any. Images are stored under
+the data folder (`artwork/chat/`) and are removed when their message is deleted.
+Gated by the same `ND_ENABLECOMMUNITY` flag.
+
 ## Configuration
 
 | Flag | Default | Purpose |

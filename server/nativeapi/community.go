@@ -20,6 +20,7 @@ func (api *Router) addCommunityRoute(r chi.Router) {
 		r.Get("/users", api.getCommunityUsers)
 		r.Get("/alerts", api.getCommunityAlerts)
 		r.Post("/alerts/seen", api.postCommunityAlertsSeen)
+		api.addChatRoutes(r)
 	})
 }
 

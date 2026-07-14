@@ -41,6 +41,7 @@ type DataStore interface {
 	Scrobble(ctx context.Context) ScrobbleRepository
 	ExternalRelease(ctx context.Context) ExternalReleaseRepository
 	ReleaseAlert(ctx context.Context) ReleaseAlertRepository
+	ChatMessage(ctx context.Context) ChatMessageRepository
 	Plugin(ctx context.Context) PluginRepository
 
 	Resource(ctx context.Context, model any) ResourceRepository

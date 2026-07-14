@@ -731,6 +731,19 @@
       "30d": "30 days",
       "90d": "90 days",
       "all": "All time"
+    },
+    "chat": {
+      "title": "Server Chat",
+      "placeholder": "Message the server… (paste an image to attach it)",
+      "empty": "No messages yet — say hi!",
+      "send": "Send",
+      "attachImage": "Attach image",
+      "attachedImage": "Attached image",
+      "removeImage": "Remove image",
+      "loadOlder": "Load older messages",
+      "delete": "Delete message",
+      "sendError": "Message could not be sent",
+      "deleteError": "Message could not be deleted"
     }
   },
   "search": {

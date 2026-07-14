@@ -6,6 +6,7 @@ import {
   EVENT_NOW_PLAYING_COUNT_SYNC,
   EVENT_PLAY_EVENT,
   EVENT_RELEASE_ALERT,
+  EVENT_CHAT_MESSAGE,
   EVENT_STREAM_RECONNECTED,
 } from '../actions'
 import config from '../config'
@@ -22,6 +23,7 @@ const initialState = {
   nowPlayingCount: 0,
   nowPlayingLastUpdate: 0,
   lastPlayEvent: null, // Last community play broadcast (scrobble)
+  lastChatMessage: null, // Last community chat broadcast (new or deleted)
   releaseAlerts: 0, // Bumped when new release alerts arrive via SSE
   streamReconnected: 0, // Timestamp of last reconnection
 }
@@ -62,6 +64,11 @@ export const activityReducer = (previousState = initialState, payload) => {
       return {
         ...previousState,
         lastPlayEvent: { ...data, receivedAt: Date.now() },
+      }
+    case EVENT_CHAT_MESSAGE:
+      return {
+        ...previousState,
+        lastChatMessage: { ...data, receivedAt: Date.now() },
       }
     case EVENT_RELEASE_ALERT:
       return { ...previousState, releaseAlerts: Date.now() }

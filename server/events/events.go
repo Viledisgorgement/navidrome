@@ -83,6 +83,19 @@ type ReleaseAlert struct {
 	Count int `json:"count"`
 }
 
+// ChatMessage announces a new (or deleted) community chat message to all
+// connected clients.
+type ChatMessage struct {
+	baseEvent
+	ID        string    `json:"id"`
+	UserID    string    `json:"userId"`
+	UserName  string    `json:"userName"`
+	Message   string    `json:"message"`
+	HasImage  bool      `json:"hasImage"`
+	CreatedAt time.Time `json:"createdAt"`
+	Deleted   bool      `json:"deleted,omitempty"`
+}
+
 func (rr *RefreshResource) With(resource string, ids ...string) *RefreshResource {
 	if rr.resources == nil {
 		rr.resources = make(map[string][]string)

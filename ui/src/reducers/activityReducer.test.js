@@ -20,6 +20,7 @@ describe('activityReducer', () => {
     nowPlayingCount: 0,
     nowPlayingLastUpdate: 0,
     lastPlayEvent: null,
+    lastChatMessage: null,
     releaseAlerts: 0,
     streamReconnected: 0,
   }

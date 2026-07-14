@@ -101,6 +101,10 @@ func (s *SQLStore) ReleaseAlert(ctx context.Context) model.ReleaseAlertRepositor
 	return NewReleaseAlertRepository(ctx, s.getDBXBuilder())
 }
 
+func (s *SQLStore) ChatMessage(ctx context.Context) model.ChatMessageRepository {
+	return NewChatMessageRepository(ctx, s.getDBXBuilder())
+}
+
 func (s *SQLStore) Plugin(ctx context.Context) model.PluginRepository {
 	return NewPluginRepository(ctx, s.getDBXBuilder())
 }

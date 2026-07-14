@@ -20,6 +20,7 @@ import (
 	"github.com/navidrome/navidrome/model"
 	"github.com/navidrome/navidrome/model/request"
 	"github.com/navidrome/navidrome/server"
+	"github.com/navidrome/navidrome/server/events"
 )
 
 // PluginManager defines the interface for plugin management operations.
@@ -47,11 +48,12 @@ type Router struct {
 	pluginManager PluginManager
 	imgUpload     core.ImageUploadService
 	community     community.Service
+	broker        events.Broker
 }
 
-func New(ds model.DataStore, share core.Share, playlists playlistsvc.Playlists, insights metrics.Insights, libraryService core.Library, userService core.User, maintenance core.Maintenance, pluginManager PluginManager, imgUpload core.ImageUploadService) *Router {
+func New(ds model.DataStore, share core.Share, playlists playlistsvc.Playlists, insights metrics.Insights, libraryService core.Library, userService core.User, maintenance core.Maintenance, pluginManager PluginManager, imgUpload core.ImageUploadService, broker events.Broker) *Router {
 	r := &Router{ds: ds, share: share, playlists: playlists, insights: insights, libs: libraryService, users: userService, maintenance: maintenance, pluginManager: pluginManager, imgUpload: imgUpload,
-		community: community.NewService(ds)}
+		broker: broker, community: community.NewService(ds)}
 	r.Handler = r.routes()
 	return r
 }
