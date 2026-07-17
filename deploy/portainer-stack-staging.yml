@@ -1,0 +1,33 @@
+# STAGING stack for Navidrome Metal Edition — tracks the :latest image
+# built from every push to the metal-edition branch.
+#
+# Runs beside prod with its own container, port, and database volume.
+# It mounts the same music read-only, so scans are identical to prod.
+# Access directly at http://<host>:4672 (no base path, no tunnel).
+#
+# Test here first; promote to prod (the :stable image) when satisfied.
+
+services:
+  navidrome-metal-staging:
+    image: ghcr.io/viledisgorgement/navidrome-metal:latest
+    container_name: navidrome-metal-staging
+    restart: unless-stopped
+    ports:
+      - '4672:4533'
+    environment:
+      ND_LOGLEVEL: info
+      ND_SCANSCHEDULE: '@every 1h'
+      ND_MUSICFOLDER: /music/main
+      # --- Metal Edition features ---
+      ND_ENABLECOMMUNITY: 'true'
+      ND_MUSICBRAINZ_ENABLED: 'true'
+      ND_METALARCHIVES_ENABLED: 'true'
+      # Alerts off in staging: avoids doubling the daily MusicBrainz crawl
+      ND_ENABLERELEASEALERTS: 'false'
+    volumes:
+      - navidrome_metal_staging_data:/data
+      - /mnt/data/Music/MainMusic:/music/main:ro
+      - '/mnt/data/Music/Video Game Music:/music/vgm:ro'
+
+volumes:
+  navidrome_metal_staging_data:
