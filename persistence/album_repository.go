@@ -96,6 +96,10 @@ func (as dbAlbums) toModels() model.Albums {
 	return slice.Map(as, func(a dbAlbum) model.Album { return *a.Album })
 }
 
+// Best-known release date of an album as a sortable string, preferring the
+// plain DATE tag, then original/release dates, then the bare year.
+const releaseDateSortExpr = "coalesce(nullif(date,''), nullif(original_date,''), nullif(release_date,''), cast(max_year as text))"
+
 func NewAlbumRepository(ctx context.Context, db dbx.Builder) model.AlbumRepository {
 	r := &albumRepository{}
 	r.ctx = ctx
@@ -109,9 +113,12 @@ func NewAlbumRepository(ctx context.Context, db dbx.Builder) model.AlbumReposito
 		// TODO Rename this to just year (or date)
 		"max_year": "coalesce(nullif(original_date,''), cast(max_year as text)), release_date, name",
 		// Day-precise release ordering for the Releases (year browser) page:
-		// most rips carry a single DATE tag, so prefer date over original_date
-		"release_date":   "coalesce(nullif(date,''), nullif(original_date,''), nullif(release_date,''), cast(max_year as text)), name",
-		"random":         "random",
+		// most rips carry a single DATE tag, so prefer date over original_date.
+		// Albums with only a bare year always sort after fully-dated ones,
+		// hence the two directional mappings (the UI always requests asc).
+		"release_date":      "(length(" + releaseDateSortExpr + ") = 4), " + releaseDateSortExpr + ", name",
+		"release_date_desc": "(length(" + releaseDateSortExpr + ") = 4) asc, " + releaseDateSortExpr + " desc, name asc",
+		"random":            "random",
 		"recently_added": recentlyAddedSort(),
 		"starred_at":     "starred, starred_at",
 		"rated_at":       "rating, rated_at",
@@ -192,7 +199,7 @@ func releaseYearFilter(_ string, value any) Sqlizer {
 	default:
 		year = fmt.Sprintf("%v", v)
 	}
-	return Expr("substr(coalesce(nullif(date,''), nullif(original_date,''), nullif(release_date,''), cast(max_year as text)), 1, 4) = ?", year)
+	return Expr("substr("+releaseDateSortExpr+", 1, 4) = ?", year)
 }
 
 func artistFilter(_ string, value any) Sqlizer {

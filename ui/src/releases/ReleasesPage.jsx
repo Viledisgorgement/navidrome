@@ -157,7 +157,12 @@ const ReleasesPage = () => {
       dataProvider
         .getList('album', {
           pagination: { page: pageToLoad, perPage: PAGE_SIZE },
-          sort: { field: 'release_date', order },
+          // Both mappings keep undated (year-only) albums at the end; the
+          // direction is baked into the mapping, so always request asc
+          sort: {
+            field: order === 'ASC' ? 'release_date' : 'release_date_desc',
+            order: 'ASC',
+          },
           filter: { release_year: year },
         })
         .then((res) => {
