@@ -33,6 +33,10 @@ configuration. Built with [Claude Code](https://claude.com/claude-code).
 - **Server chat** — shared chat box on the Community page with image support
   (paste or attach), live delivery to all connected users, delete your own
   messages (admins any)
+- **Releases year browser** (`/releases`) — pick a year and browse its albums
+  as a list with actual release dates, sorted by release day in either
+  direction, plus a "Shuffle year" button that queues random songs from
+  that year
 - **Missing albums** — artist pages can show the artist's full external discography
   as dimmed "ghost cards" for releases you don't own, sourced from MusicBrainz and
   (opt-in) Metal Archives — great for catching demos, splits and EPs
