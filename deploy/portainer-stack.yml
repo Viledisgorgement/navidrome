@@ -1,0 +1,46 @@
+# Portainer stack for Navidrome Metal Edition
+#
+# If the GHCR package is private, add a registry credential in Portainer
+# (Registries -> ghcr.io, username + a token with read:packages), or make
+# the package public on GitHub.
+#
+# Web UI: http://<host>:4671  (change the left side of the port mapping
+# if 4671 collides with something else)
+
+services:
+  navidrome-metal:
+    # Production tracks the :stable tag, built from the metal-stable branch.
+    # Changes land on :latest (staging stack) first and are promoted after
+    # testing.
+    image: ghcr.io/viledisgorgement/navidrome-metal:stable
+    container_name: navidrome-metal
+    restart: unless-stopped
+    # Uncomment to run as a specific user (match your music files' owner)
+    # user: "1000:1000"
+    ports:
+      - "4671:4533"
+    environment:
+      ND_LOGLEVEL: info
+      ND_SCANSCHEDULE: '@every 1h'
+      # Default library on first boot; add the others in Settings -> Libraries
+      ND_MUSICFOLDER: /music/main
+      # Serve under /navidrome (matches the cloudflared public hostname path)
+      ND_BASEURL: /navidrome
+      # Last.fm: set LASTFM_APIKEY / LASTFM_SECRET as stack environment
+      # variables in Portainer (kept out of this public file)
+      ND_LASTFM_ENABLED: 'true'
+      ND_LASTFM_APIKEY: ${LASTFM_APIKEY:-}
+      ND_LASTFM_SECRET: ${LASTFM_SECRET:-}
+      # --- Metal Edition features ---
+      ND_ENABLECOMMUNITY: 'true'
+      ND_MUSICBRAINZ_ENABLED: 'true'
+      ND_METALARCHIVES_ENABLED: 'true'
+      ND_ENABLERELEASEALERTS: 'true'
+      ND_RELEASEALERTSSCHEDULE: '0 6 * * *'
+    volumes:
+      - navidrome_metal_data:/data
+      - /mnt/data/Music/MainMusic:/music/main:ro
+      - '/mnt/data/Music/Video Game Music:/music/vgm:ro'
+
+volumes:
+  navidrome_metal_data:
