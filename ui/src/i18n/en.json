@@ -750,6 +750,15 @@
     "artists": "Search artists…",
     "albums": "Search albums…"
   },
+  "releases": {
+    "title": "Releases",
+    "shuffleYear": "Shuffle %{year}",
+    "toggleOrder": "Toggle date order",
+    "albumCount": "%{smart_count} album |||| %{smart_count} albums",
+    "songs": "%{smart_count} song |||| %{smart_count} songs",
+    "empty": "No releases from %{year} in your library",
+    "loadMore": "Load more"
+  },
   "releaseAlerts": {
     "title": "New Releases",
     "empty": "No release alerts yet — they'll appear when your artists announce new albums"

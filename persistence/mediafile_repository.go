@@ -106,6 +106,8 @@ var mediaFileFilter = sync.OnceValue(func() map[string]filterFunc {
 		"artists_id": artistFilter,
 		"library_id": libraryIdFilter,
 		"path":       startsWithFilter("media_file.path"),
+		// Songs from a given year, for the Releases page "Shuffle Year"
+		"year": songYearFilter,
 	}
 	// Add all album tags as filters
 	for tag := range model.TagMappings() {
@@ -115,6 +117,10 @@ var mediaFileFilter = sync.OnceValue(func() map[string]filterFunc {
 	}
 	return filters
 })
+
+func songYearFilter(_ string, value any) Sqlizer {
+	return Eq{"media_file.year": value}
+}
 
 func mediaFileRecentlyAddedSort() string {
 	if conf.Server.RecentlyAddedByModTime {

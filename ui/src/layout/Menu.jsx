@@ -6,6 +6,7 @@ import { useTranslate, MenuItemLink, getResources } from 'react-admin'
 import ViewListIcon from '@material-ui/icons/ViewList'
 import AlbumIcon from '@material-ui/icons/Album'
 import PeopleIcon from '@material-ui/icons/People'
+import EventIcon from '@material-ui/icons/Event'
 import { humanize, pluralize } from 'inflection'
 import { defaultAlbumList } from '../album/albumLists'
 import PlaylistsSubMenu from './PlaylistsSubMenu'
@@ -104,6 +105,15 @@ const Menu = ({ dense = false }) => {
           exact
         />
       )}
+      <MenuItemLink
+        to="/releases"
+        activeClassName={classes.active}
+        primaryText={translate('releases.title', { _: 'Releases' })}
+        leftIcon={<EventIcon />}
+        sidebarIsOpen={open}
+        dense={dense}
+        exact
+      />
       {config.devSidebarPlaylists && open ? (
         <>
           <Divider />

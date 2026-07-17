@@ -41,6 +41,13 @@ daily) checks each library artist for release groups dated in the last 14 days o
 announced for the future, and scans Metal Archives' upcoming-releases page (when
 enabled) for library band names. New alerts are broadcast live via SSE.
 
+### Releases (year browser)
+`/releases` in the menu: pick a year and see every album from it as a dated
+list, sorted by actual release day (ascending or descending), with covers,
+artists and song counts. A "Shuffle <year>" button queues up to 500 random
+songs from that year. Uses tag dates (`DATE`, then `ORIGINALDATE`,
+`RELEASEDATE`), falling back to the bare year when no full date is tagged.
+
 ### Server chat
 A chat box on the `/community` page shared by everyone on the server. Supports text
 and images — paste an image straight into the input (or attach one with the photo
