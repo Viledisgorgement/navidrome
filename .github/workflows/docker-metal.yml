@@ -10,6 +10,32 @@ permissions:
   packages: write
 
 jobs:
+  # Portainer cannot clone this repo (upstream test fixtures contain
+  # symlinks, which newer Portainer rejects), so the stacks point at tiny
+  # deploy-only branches instead. Keep them in sync with each channel:
+  #   metal-edition -> stacks-staging
+  #   metal-stable  -> stacks-stable
+  sync-stack-branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push deploy folder to the channel's stacks branch
+        env:
+          GIT_AUTHOR_NAME: github-actions
+          GIT_AUTHOR_EMAIL: github-actions@github.com
+          GIT_COMMITTER_NAME: github-actions
+          GIT_COMMITTER_EMAIL: github-actions@github.com
+        run: |
+          BRANCH=stacks-staging
+          if [ "${GITHUB_REF_NAME}" = "metal-stable" ]; then
+            BRANCH=stacks-stable
+          fi
+          TREE=$(git ls-tree HEAD deploy | git mktree)
+          COMMIT=$(echo "Portainer stack files from ${GITHUB_REF_NAME} ${GITHUB_SHA}" | git commit-tree "$TREE")
+          git push -f origin "$COMMIT:refs/heads/$BRANCH"
+
   docker:
     runs-on: ubuntu-latest
     steps:
