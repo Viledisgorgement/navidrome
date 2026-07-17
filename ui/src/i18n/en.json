@@ -755,7 +755,6 @@
     "shuffleYear": "Shuffle %{year}",
     "toggleOrder": "Toggle date order",
     "albumCount": "%{smart_count} album |||| %{smart_count} albums",
-    "songs": "%{smart_count} song |||| %{smart_count} songs",
     "empty": "No releases from %{year} in your library",
     "loadMore": "Load more"
   },

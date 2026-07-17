@@ -83,13 +83,6 @@ const useStyles = makeStyles((theme) => ({
     minWidth: 90,
     textAlign: 'right',
   },
-  songs: {
-    fontSize: '0.75rem',
-    color: theme.palette.text.disabled,
-    flexShrink: 0,
-    minWidth: 60,
-    textAlign: 'right',
-  },
   empty: {
     fontSize: '0.85rem',
     color: theme.palette.text.disabled,
@@ -143,18 +136,18 @@ const ReleasesPage = () => {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
 
-  // Find the oldest album year once, to bound the year selector
+  // Find the oldest album year once, to bound the year selector. Fetches a
+  // small page because albums without any year (max_year 0) sort first.
   useEffect(() => {
     dataProvider
       .getList('album', {
-        pagination: { page: 1, perPage: 1 },
+        pagination: { page: 1, perPage: 20 },
         sort: { field: 'max_year', order: 'ASC' },
         filter: {},
       })
       .then((res) => {
-        const oldest =
-          res.data[0] && (res.data[0].minYear || res.data[0].maxYear)
-        if (oldest > 0) setMinYear(oldest)
+        const first = res.data.find((a) => (a.minYear || a.maxYear) > 0)
+        if (first) setMinYear(first.minYear || first.maxYear)
       })
       .catch(() => {})
   }, [dataProvider])
@@ -165,7 +158,7 @@ const ReleasesPage = () => {
         .getList('album', {
           pagination: { page: pageToLoad, perPage: PAGE_SIZE },
           sort: { field: 'release_date', order },
-          filter: { year },
+          filter: { release_year: year },
         })
         .then((res) => {
           setAlbums((prev) => (append ? [...prev, ...res.data] : res.data))
@@ -260,11 +253,6 @@ const ReleasesPage = () => {
                     {album.albumArtist}
                   </Typography>
                 </div>
-                <span className={classes.songs}>
-                  {translate('releases.songs', {
-                    smart_count: album.songCount,
-                  })}
-                </span>
                 <span className={classes.date}>
                   {formatDate(albumDate(album))}
                 </span>

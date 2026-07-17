@@ -7,6 +7,7 @@ import (
 	"iter"
 	"maps"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -127,6 +128,7 @@ var albumFilters = sync.OnceValue(func() map[string]filterFunc {
 		"compilation":      booleanFilter,
 		"artist_id":        artistFilter,
 		"year":             yearFilter,
+		"release_year":     releaseYearFilter,
 		"recently_played":  recentlyPlayedFilter,
 		"played_by_anyone": playedByAnyoneFilter,
 		"starred":          annotationBoolFilter("starred"),
@@ -174,6 +176,23 @@ func yearFilter(_ string, value any) Sqlizer {
 		},
 		Eq{"max_year": value},
 	}
+}
+
+// releaseYearFilter matches albums whose displayed release date falls in the
+// given year. Uses the same expression as the release_date sort, so the
+// Releases page only lists albums under the year it actually shows for them
+// (unlike yearFilter, which matches any album whose min-max span contains it).
+func releaseYearFilter(_ string, value any) Sqlizer {
+	var year string
+	switch v := value.(type) {
+	case float64:
+		year = strconv.Itoa(int(v))
+	case int:
+		year = strconv.Itoa(v)
+	default:
+		year = fmt.Sprintf("%v", v)
+	}
+	return Expr("substr(coalesce(nullif(date,''), nullif(original_date,''), nullif(release_date,''), cast(max_year as text)), 1, 4) = ?", year)
 }
 
 func artistFilter(_ string, value any) Sqlizer {
