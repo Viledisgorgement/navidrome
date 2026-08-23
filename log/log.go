@@ -45,8 +45,15 @@ var redacted = &Hook{
 		"([^\\w]p=)[^&]+",
 		"([^\\w]jwt=)[^&]+",
 
-		// External services query params
-		"([^\\w]api_key=)[\\w]+",
+		// External services query params. Values can be JWTs (dots, dashes), so match everything up
+		// to the next query separator or whitespace, not just word chars. A [\w]+ class would stop
+		// at a JWT's first '.' and leak its payload and signature. Case-insensitive with an
+		// optional underscore: the API accepts api_key, apikey and ApiKey alike.
+		"(?i)([^\\w]api_?key=)[^&\\s]+",
+
+		// Sensitive request headers, logged as a JSON blob at trace level and never matched by the
+		// query-param patterns above. Blank the whole value array; values may hold escaped quotes.
+		`(?i)("(?:Authorization|X-Emby-Token|X-MediaBrowser-Token|X-Nd-Authorization)":\[")[^\]]*("\])`,
 	},
 }
 
