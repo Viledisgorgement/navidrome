@@ -58,6 +58,9 @@ func (a *artwork) GetOrPlaceholder(ctx context.Context, id string, size int, squ
 }
 
 func (a *artwork) Get(ctx context.Context, artID model.ArtworkID, size int, square bool) (reader io.ReadCloser, lastUpdate time.Time, err error) {
+	if size < 0 {
+		size = 0 // a negative size means full-size, not a giant (OOM) resize rectangle
+	}
 	artReader, err := a.getArtworkReader(ctx, artID, size, square)
 	if err != nil {
 		return nil, time.Time{}, err

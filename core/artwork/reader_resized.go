@@ -148,8 +148,30 @@ func toFastScaleType(img image.Image) image.Image {
 	}
 }
 
+// maxImagePixels caps the declared pixel count of an image before it is fully decoded, so a
+// small file claiming huge dimensions cannot force a multi-gigabyte allocation.
+const maxImagePixels = 64 << 20
+
+// decodeCapped decodes an image only after checking its declared dimensions against
+// maxImagePixels.
+func decodeCapped(data []byte) (image.Image, string, error) {
+	cfg, format, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return nil, "", fmt.Errorf("decode image config: %w", err)
+	}
+	// Compared by division so the cap cannot be defeated by an int64 overflow.
+	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width > maxImagePixels/cfg.Height {
+		return nil, "", fmt.Errorf("image dimensions %dx%d exceed pixel cap %d", cfg.Width, cfg.Height, maxImagePixels)
+	}
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, "", fmt.Errorf("decode image: %w", err)
+	}
+	return img, format, nil
+}
+
 func resizeStaticImage(data []byte, size int, square bool) (io.Reader, int, error) {
-	original, format, err := image.Decode(bytes.NewReader(data))
+	original, format, err := decodeCapped(data)
 	if err != nil {
 		return nil, 0, err
 	}

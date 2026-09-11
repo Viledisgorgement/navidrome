@@ -196,7 +196,11 @@ func (a *playlistArtworkReader) loadTiles(ctx context.Context) ([]image.Image, e
 }
 
 func (a *playlistArtworkReader) createTile(_ context.Context, r io.ReadCloser) (image.Image, error) {
-	img, _, err := image.Decode(r)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	img, _, err := decodeCapped(data)
 	if err != nil {
 		return nil, err
 	}

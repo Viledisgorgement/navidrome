@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/navidrome/navidrome/conf"
+	"github.com/navidrome/navidrome/log"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/viper"
@@ -192,6 +194,21 @@ var _ = Describe("Configuration", func() {
 			Expect(func() {
 				conf.Load(true)
 			}).To(PanicWith(ContainSubstring("Error creating log file directory")))
+		})
+
+		It("creates the log file readable only by the owner", func() {
+			if runtime.GOOS == "windows" {
+				Skip("file modes are not enforced on Windows")
+			}
+			logFile := filepath.Join(GinkgoT().TempDir(), "navidrome.log")
+			viper.SetDefault("datafolder", GinkgoT().TempDir())
+			viper.SetDefault("logfile", logFile)
+			DeferCleanup(log.SetOutput, os.Stderr)
+			conf.Load(true)
+
+			info, err := os.Stat(logFile)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(info.Mode().Perm()).To(Equal(os.FileMode(0600)))
 		})
 
 		It("is called when BaseURL is invalid", func() {
