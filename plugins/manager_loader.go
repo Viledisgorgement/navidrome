@@ -138,7 +138,7 @@ var hostServices = []hostServiceEntry{
 		create: func(ctx *serviceContext) ([]extism.HostFunction, io.Closer) {
 			perm := ctx.permissions.Http
 			service := newHTTPService(ctx.pluginName, perm)
-			return host.RegisterHTTPHostFunctions(service), nil
+			return host.RegisterHTTPHostFunctions(service), service
 		},
 	},
 	{
@@ -307,11 +307,8 @@ func (m *Manager) loadPluginWithConfig(p *model.Plugin) error {
 		Timeout: uint64(defaultTimeout.Milliseconds()),
 	}
 
-	if pkg.Manifest.Permissions != nil && pkg.Manifest.Permissions.Http != nil {
-		if hosts := pkg.Manifest.Permissions.Http.RequiredHosts; len(hosts) > 0 {
-			pluginManifest.AllowedHosts = hosts
-		}
-	}
+	// Never set AllowedHosts: extism's own http_request has no SSRF guard, so plugins
+	// must use host.HTTPSend, which checks the resolved IP at dial time.
 
 	// Configure filesystem access for library permission
 	if pkg.Manifest.HasLibraryFilesystemPermission() {
