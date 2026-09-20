@@ -110,6 +110,11 @@ func fromLocalFile(path string) sourceFunc {
 		if path == "" {
 			return nil, "", nil
 		}
+		// Only ever serve image files: a stored playlist cover path pointing at any other file
+		// (GHSA-vwq6-xrw5-phpg) falls through to the next source instead of leaking its bytes.
+		if !model.IsImageFile(path) {
+			return nil, "", nil
+		}
 		f, err := os.Open(path)
 		if err != nil {
 			return nil, "", err
