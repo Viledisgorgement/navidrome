@@ -76,6 +76,7 @@ const (
 	DefaultUIVolume                 = 100
 	DefaultUISearchDebounceMs       = 200
 	DefaultUIPlaybackReportInterval = time.Minute
+	DefaultAuthWindowLength         = 20 * time.Second
 
 	DefaultHttpClientTimeOut = 10 * time.Second
 
