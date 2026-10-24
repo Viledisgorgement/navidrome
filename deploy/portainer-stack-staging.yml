@@ -22,8 +22,11 @@ services:
       ND_ENABLECOMMUNITY: 'true'
       ND_MUSICBRAINZ_ENABLED: 'true'
       ND_METALARCHIVES_ENABLED: 'true'
-      # Alerts off in staging: avoids doubling the daily MusicBrainz crawl
-      ND_ENABLERELEASEALERTS: 'false'
+      # TEMPORARY: alerts on with a short schedule to test the release-date
+      # fix. Set back to 'false' (and drop the schedule) once verified, to
+      # avoid doubling the daily MusicBrainz crawl.
+      ND_ENABLERELEASEALERTS: 'true'
+      ND_RELEASEALERTSSCHEDULE: '@every 15m'
     volumes:
       - navidrome_metal_staging_data:/data
       - /mnt/data/Music/MainMusic:/music/main:ro
