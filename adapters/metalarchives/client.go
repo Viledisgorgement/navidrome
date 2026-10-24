@@ -156,22 +156,59 @@ type UpcomingRelease struct {
 var albumLinkCellRe = regexp.MustCompile(`href="([^"]*/albums/[^/"]+/[^/"]+/(\d+))"[^>]*>([^<]+)<`)
 var bandLinkCellRe = regexp.MustCompile(`/bands/[^/"]+/\d+"[^>]*>([^<]+)<`)
 
-// UpcomingReleases fetches MA's upcoming releases list (first page, which
-// covers the next weeks — plenty for a daily check).
+const (
+	upcomingPageSize = 100
+	// MA lists a few hundred releases a week, so a page only covers a day
+	// or two. Page through until this far ahead (or the page cap) so
+	// releases announced for next month and beyond are found too.
+	upcomingHorizon  = 120 * 24 * time.Hour
+	upcomingMaxPages = 60
+)
+
+// UpcomingReleases fetches MA's upcoming releases list, which is sorted by
+// date, paging through it until upcomingHorizon (or the end of the list).
+// A failure after the first page returns what was fetched so far.
 func (c *Client) UpcomingReleases(ctx context.Context) ([]UpcomingRelease, error) {
+	horizon := time.Now().Add(upcomingHorizon).Format("2006-01-02")
+	var releases []UpcomingRelease
+	for page := 0; page < upcomingMaxPages; page++ {
+		if ctx.Err() != nil {
+			return releases, ctx.Err()
+		}
+		rows, total, err := c.upcomingPage(ctx, page*upcomingPageSize)
+		if err != nil {
+			if page == 0 {
+				return nil, err
+			}
+			log.Warn(ctx, "Metal Archives upcoming releases: stopping early", "page", page, err)
+			break
+		}
+		releases = append(releases, rows...)
+		// total is MA's full list size; when it's missing, page until empty
+		if len(rows) == 0 || (total > 0 && (page+1)*upcomingPageSize >= total) {
+			break
+		}
+		if last := rows[len(rows)-1].Date; isoDateRe.MatchString(last) && last > horizon {
+			break
+		}
+	}
+	return releases, nil
+}
+
+func (c *Client) upcomingPage(ctx context.Context, offset int) ([]UpcomingRelease, int, error) {
 	params := url.Values{}
 	params.Set("sEcho", "1")
-	params.Set("iDisplayStart", "0")
-	params.Set("iDisplayLength", "100")
+	params.Set("iDisplayStart", strconv.Itoa(offset))
+	params.Set("iDisplayLength", strconv.Itoa(upcomingPageSize))
 	resp, err := c.get(ctx, c.baseURL+"/release/ajax-upcoming/json/1?"+params.Encode())
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer resp.Body.Close()
 
 	var parsed searchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return nil, fmt.Errorf("metalarchives: parsing upcoming releases: %w", err)
+		return nil, 0, fmt.Errorf("metalarchives: parsing upcoming releases: %w", err)
 	}
 	var releases []UpcomingRelease
 	for _, row := range parsed.Data {
@@ -193,7 +230,7 @@ func (c *Client) UpcomingReleases(ctx context.Context) ([]UpcomingRelease, error
 			URL:   album[1],
 		})
 	}
-	return releases, nil
+	return releases, parsed.TotalRecords, nil
 }
 
 var (

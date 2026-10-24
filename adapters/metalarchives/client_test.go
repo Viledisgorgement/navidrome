@@ -150,3 +150,35 @@ func TestNormalizeDate(t *testing.T) {
 		}
 	}
 }
+
+func upcomingRow(id, band, title, date string) string {
+	return `["<a href=\"https://www.metal-archives.com/bands/` + band + `/1\">` + band + `</a>",` +
+		`"<a href=\"https://www.metal-archives.com/albums/` + band + `/` + title + `/` + id + `\">` + title + `</a>",` +
+		`"Full-length","Death Metal","` + date + `","October 1st"]`
+}
+
+func TestUpcomingReleasesPagesThroughList(t *testing.T) {
+	var starts []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := r.URL.Query().Get("iDisplayStart")
+		starts = append(starts, start)
+		w.Header().Set("Content-Type", "application/json")
+		rows := upcomingRow("1", "Early", "First", "October 25th, 2026")
+		if start != "0" {
+			rows = upcomingRow("1474149", "Artificial_Brain", "Antillia", "November 14th, 2026")
+		}
+		_, _ = w.Write([]byte(`{"iTotalRecords": 150, "aaData": [` + rows + `]}`))
+	}))
+	defer srv.Close()
+
+	releases, err := NewClient(srv.URL).UpcomingReleases(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(starts) != 2 || starts[1] != "100" {
+		t.Fatalf("expected two pages (0, 100), got %v", starts)
+	}
+	if len(releases) != 2 || releases[1].ID != "1474149" || releases[1].Date != "2026-11-14" {
+		t.Fatalf("unexpected releases: %+v", releases)
+	}
+}

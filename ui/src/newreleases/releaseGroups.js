@@ -9,6 +9,7 @@ export const GROUPS = [
   { key: 'thisMonth', upcoming: false },
   { key: 'earlier', upcoming: false },
   { key: 'nextWeek', upcoming: true },
+  { key: 'restOfMonth', upcoming: true },
   { key: 'nextMonth', upcoming: true },
   { key: 'later', upcoming: true },
   { key: 'tba', upcoming: true },
@@ -28,27 +29,33 @@ export const parseReleaseDate = (date) => {
   }
 }
 
+// Months from today's month to the date's month (0 = this month)
+const monthDiff = (day, today) =>
+  (day.getFullYear() - today.getFullYear()) * 12 +
+  day.getMonth() -
+  today.getMonth()
+
+// The week groups are rolling 7 days; the month groups are calendar months.
 export const groupFor = (date, now = new Date()) => {
   const parsed = parseReleaseDate(date)
   if (!parsed) return 'tba'
   const today = startOfDay(now)
+  const months = monthDiff(parsed.day, today)
   if (parsed.monthOnly) {
-    const diff =
-      (parsed.day.getFullYear() - today.getFullYear()) * 12 +
-      parsed.day.getMonth() -
-      today.getMonth()
-    if (diff === 0) return 'thisMonth'
-    return diff > 0 ? 'later' : 'earlier'
+    // "sometime this month" is most likely still to come
+    if (months === 0) return 'restOfMonth'
+    if (months === 1) return 'nextMonth'
+    return months > 0 ? 'later' : 'earlier'
   }
   const days = Math.round((parsed.day - today) / DAY)
   if (days === 0) return 'today'
   if (days < 0) {
     if (days >= -7) return 'thisWeek'
-    if (days >= -31) return 'thisMonth'
-    return 'earlier'
+    return months === 0 ? 'thisMonth' : 'earlier'
   }
   if (days <= 7) return 'nextWeek'
-  if (days <= 31) return 'nextMonth'
+  if (months === 0) return 'restOfMonth'
+  if (months === 1) return 'nextMonth'
   return 'later'
 }
 

@@ -9,10 +9,14 @@ describe('groupFor', () => {
     ['2026-10-20', 'thisWeek'],
     ['2026-10-01', 'thisMonth'],
     ['2026-08-01', 'earlier'],
+    ['2026-09-30', 'earlier'],
     ['2026-10-28', 'nextWeek'],
-    ['2026-11-15', 'nextMonth'],
+    ['2026-10-31', 'nextWeek'],
+    ['2026-11-14', 'nextMonth'],
+    ['2026-11-30', 'nextMonth'],
     ['2026-12-05', 'later'],
-    ['2026-10', 'thisMonth'],
+    ['2026-10', 'restOfMonth'],
+    ['2026-11', 'nextMonth'],
     ['2026-12', 'later'],
     ['2026-09', 'earlier'],
     ['TBA', 'tba'],
@@ -33,6 +37,7 @@ describe('groupAlerts', () => {
     ]
     const groups = groupAlerts(alerts, now)
     expect(groups.later.map((a) => a.id)).toEqual(['b', 'a', 'c'])
+    expect(groups.nextMonth).toEqual([])
     expect(groups.earlier.map((a) => a.id)).toEqual(['e', 'd'])
   })
 })

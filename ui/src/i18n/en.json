@@ -774,7 +774,8 @@
       "thisMonth": "Released this month",
       "earlier": "Earlier",
       "nextWeek": "Coming this week",
-      "nextMonth": "Coming this month",
+      "restOfMonth": "Coming later this month",
+      "nextMonth": "Coming next month",
       "later": "Coming later",
       "tba": "Date to be announced"
     }
