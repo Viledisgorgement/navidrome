@@ -64,6 +64,15 @@ const useStyles = makeStyles((theme) => ({
     fontSize: '0.85rem',
     color: theme.palette.text.disabled,
   },
+  headerRow: {
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  seeAll: {
+    padding: theme.spacing(1, 1, 0.5, 1),
+    fontSize: '0.8rem',
+  },
   header: {
     padding: theme.spacing(1, 1, 0.5, 1),
     fontWeight: 600,
@@ -124,9 +133,18 @@ const ReleaseAlertsPanel = () => {
       >
         <Card>
           <CardContent style={{ padding: 0 }}>
-            <Typography className={classes.header}>
-              {translate('releaseAlerts.title')}
-            </Typography>
+            <div className={classes.headerRow}>
+              <Typography className={classes.header}>
+                {translate('releaseAlerts.title')}
+              </Typography>
+              <Link
+                to="/new-releases"
+                className={classes.seeAll}
+                onClick={() => setAnchorEl(null)}
+              >
+                {translate('releaseAlerts.seeAll')}
+              </Link>
+            </div>
             {alerts.length === 0 ? (
               <Typography className={classes.empty}>
                 {translate('releaseAlerts.empty')}

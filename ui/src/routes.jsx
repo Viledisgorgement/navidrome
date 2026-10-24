@@ -3,6 +3,7 @@ import { Route } from 'react-router-dom'
 import Personal from './personal/Personal'
 import CommunityPage from './community/CommunityPage'
 import ReleasesPage from './releases/ReleasesPage'
+import NewReleasesPage from './newreleases/NewReleasesPage'
 import config from './config'
 
 const routes = [
@@ -12,6 +13,12 @@ const routes = [
     path="/releases"
     render={() => <ReleasesPage />}
     key={'releases'}
+  />,
+  <Route
+    exact
+    path="/new-releases"
+    render={() => <NewReleasesPage />}
+    key={'new-releases'}
   />,
 ]
 

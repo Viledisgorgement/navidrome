@@ -760,7 +760,24 @@
   },
   "releaseAlerts": {
     "title": "New Releases",
-    "empty": "No release alerts yet — they'll appear when your artists announce new albums"
+    "empty": "No release alerts yet — they'll appear when your artists announce new albums",
+    "seeAll": "See all"
+  },
+  "newReleases": {
+    "title": "New Releases",
+    "allTypes": "All",
+    "outNow": "Out now",
+    "upcoming": "Upcoming",
+    "groups": {
+      "today": "Released today",
+      "thisWeek": "Released this week",
+      "thisMonth": "Released this month",
+      "earlier": "Earlier",
+      "nextWeek": "Coming this week",
+      "nextMonth": "Coming this month",
+      "later": "Coming later",
+      "tba": "Date to be announced"
+    }
   },
   "discography": {
     "showMissing": "Show missing albums",

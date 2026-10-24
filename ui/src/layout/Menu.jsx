@@ -7,6 +7,7 @@ import ViewListIcon from '@material-ui/icons/ViewList'
 import AlbumIcon from '@material-ui/icons/Album'
 import PeopleIcon from '@material-ui/icons/People'
 import EventIcon from '@material-ui/icons/Event'
+import NewReleasesIcon from '@material-ui/icons/NewReleases'
 import { humanize, pluralize } from 'inflection'
 import { defaultAlbumList } from '../album/albumLists'
 import PlaylistsSubMenu from './PlaylistsSubMenu'
@@ -110,6 +111,15 @@ const Menu = ({ dense = false }) => {
         activeClassName={classes.active}
         primaryText={translate('releases.title', { _: 'Releases' })}
         leftIcon={<EventIcon />}
+        sidebarIsOpen={open}
+        dense={dense}
+        exact
+      />
+      <MenuItemLink
+        to="/new-releases"
+        activeClassName={classes.active}
+        primaryText={translate('newReleases.title', { _: 'New Releases' })}
+        leftIcon={<NewReleasesIcon />}
         sidebarIsOpen={open}
         dense={dense}
         exact
