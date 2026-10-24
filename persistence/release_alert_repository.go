@@ -9,6 +9,10 @@ import (
 	"github.com/pocketbase/dbx"
 )
 
+// recentReleaseWindow matches how far back the release check looks for new
+// releases (core/community newReleaseWindow).
+const recentReleaseWindow = 14 * 24 * time.Hour
+
 type releaseAlertRepository struct {
 	sqlRepository
 }
@@ -55,14 +59,18 @@ type dbReleaseAlert struct {
 }
 
 func (r *releaseAlertRepository) GetAll(limit int) ([]model.ReleaseAlert, error) {
-	// ISO dates (YYYY, YYYY-MM, YYYY-MM-DD) sort as text, newest first.
-	// Anything else ("TBA", empty) goes last.
+	// ISO dates (YYYY, YYYY-MM, YYYY-MM-DD) compare correctly as text; a
+	// partial date is compared against the cutoff at the same precision.
+	// Recent and upcoming releases come first, soonest at the top; older
+	// alerts follow, newest first; anything else ("TBA", empty) goes last.
+	cutoff := time.Now().Add(-recentReleaseWindow).Format("2006-01-02")
 	sq := Select("*").From(r.tableName).
-		OrderBy(
-			"case when release_date glob '[0-9][0-9][0-9][0-9]*' then 0 else 1 end",
-			"release_date desc",
-			"created_at desc",
-		).
+		OrderByClause(`case
+			when release_date is null or release_date not glob '[0-9][0-9][0-9][0-9]*' then 2
+			when release_date >= substr(?, 1, length(release_date)) then 0
+			else 1 end`, cutoff).
+		OrderByClause("case when release_date >= substr(?, 1, length(release_date)) then release_date end asc", cutoff).
+		OrderBy("release_date desc", "created_at desc").
 		Limit(uint64(limit)) //nolint:gosec
 	var rows []dbReleaseAlert
 	if err := r.queryAll(sq, &rows); err != nil {

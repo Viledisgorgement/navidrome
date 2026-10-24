@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"time"
 
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
@@ -24,15 +25,19 @@ var _ = Describe("ReleaseAlertRepository", func() {
 		_, _ = db.NewQuery("DELETE FROM release_alert").Execute()
 	})
 
-	It("sorts by release date newest first, with unparseable dates last", func() {
-		for id, date := range map[string]string{
-			"a": "2026-09-09",
-			"b": "2026-09-25",
-			"c": "TBA",
-			"d": "2026-10-03",
-			"e": "2026-09-18",
-			"f": "2026-10",
-		} {
+	It("lists recent and upcoming releases soonest first, then older ones, then undated", func() {
+		day := func(offset int) string { return time.Now().AddDate(0, 0, offset).Format("2006-01-02") }
+		dates := map[string]string{
+			"a": day(60),  // far future
+			"b": day(3),   // upcoming soon
+			"c": "TBA",    // unparseable
+			"d": day(-5),  // released recently
+			"e": day(-40), // older than the recent window
+			"f": day(-90), // oldest
+			"g": day(20),
+			"h": day(-1)[:7], // month-only, current month
+		}
+		for id, date := range dates {
 			_, err := repo.InsertIfMissing(model.ReleaseAlert{
 				ID: id, ArtistID: artistKraftwerk.ID, ArtistName: artistKraftwerk.Name,
 				Source: model.ReleaseSourceMetalArchives, Title: id, ReleaseDate: date,
@@ -42,10 +47,10 @@ var _ = Describe("ReleaseAlertRepository", func() {
 
 		alerts, err := repo.GetAll(50)
 		Expect(err).ToNot(HaveOccurred())
-		var dates []string
+		var ids []string
 		for _, a := range alerts {
-			dates = append(dates, a.ReleaseDate)
+			ids = append(ids, a.ID)
 		}
-		Expect(dates).To(Equal([]string{"2026-10-03", "2026-10", "2026-09-25", "2026-09-18", "2026-09-09", "TBA"}))
+		Expect(ids).To(Equal([]string{"h", "d", "b", "g", "a", "e", "f", "c"}))
 	})
 })
