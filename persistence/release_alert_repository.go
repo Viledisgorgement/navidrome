@@ -55,8 +55,14 @@ type dbReleaseAlert struct {
 }
 
 func (r *releaseAlertRepository) GetAll(limit int) ([]model.ReleaseAlert, error) {
+	// ISO dates (YYYY, YYYY-MM, YYYY-MM-DD) sort as text, newest first.
+	// Anything else ("TBA", empty) goes last.
 	sq := Select("*").From(r.tableName).
-		OrderBy("release_date desc, created_at desc").
+		OrderBy(
+			"case when release_date glob '[0-9][0-9][0-9][0-9]*' then 0 else 1 end",
+			"release_date desc",
+			"created_at desc",
+		).
 		Limit(uint64(limit)) //nolint:gosec
 	var rows []dbReleaseAlert
 	if err := r.queryAll(sq, &rows); err != nil {

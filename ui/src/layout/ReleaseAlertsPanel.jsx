@@ -18,6 +18,20 @@ import LaunchIcon from '@material-ui/icons/Launch'
 import { httpClient } from '../dataProvider'
 import config from '../config'
 
+// Alerts store ISO dates (YYYY-MM-DD or YYYY-MM) so they sort correctly;
+// show them in the user's locale. Anything else is shown as-is.
+const formatReleaseDate = (date) => {
+  const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(date || '')
+  if (!m) return date
+  const [, year, month, day] = m
+  const d = new Date(Number(year), Number(month) - 1, Number(day || 1))
+  return d.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    ...(day && { day: 'numeric' }),
+  })
+}
+
 const useStyles = makeStyles((theme) => ({
   button: { color: 'inherit' },
   list: {
@@ -132,7 +146,8 @@ const ReleaseAlertsPanel = () => {
                       {alert.title}
                     </Typography>
                     <Typography className={classes.detail}>
-                      {alert.releaseType} · {alert.releaseDate} · {alert.source}
+                      {alert.releaseType} ·{' '}
+                      {formatReleaseDate(alert.releaseDate)} · {alert.source}
                       {alert.externalUrl && (
                         <a
                           href={alert.externalUrl}

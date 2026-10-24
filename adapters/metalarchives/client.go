@@ -189,11 +189,47 @@ func (c *Client) UpcomingReleases(ctx context.Context) ([]UpcomingRelease, error
 			Band:  strings.TrimSpace(htmlesc.UnescapeString(band[1])),
 			Title: strings.TrimSpace(htmlesc.UnescapeString(album[3])),
 			Type:  normalizeType(strings.TrimSpace(row[2])),
-			Date:  strings.TrimSpace(row[4]),
+			Date:  NormalizeDate(row[4]),
 			URL:   album[1],
 		})
 	}
 	return releases, nil
+}
+
+var (
+	maFullDateRe  = regexp.MustCompile(`^([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,\s*(\d{4})$`)
+	maMonthDateRe = regexp.MustCompile(`^([A-Za-z]+)\s+(\d{4})$`)
+	isoDateRe     = regexp.MustCompile(`^\d{4}(-\d{2}(-\d{2})?)?$`)
+)
+
+// NormalizeDate converts MA display dates ("September 9th, 2026") to ISO
+// form ("2026-09-09"), or "2026-09" when MA only knows the month, so they
+// sort correctly next to MusicBrainz dates. Anything it can't parse ("TBA")
+// is returned trimmed but otherwise unchanged.
+func NormalizeDate(s string) string {
+	s = strings.TrimSpace(s)
+	if isoDateRe.MatchString(s) {
+		return s
+	}
+	if m := maFullDateRe.FindStringSubmatch(s); m != nil {
+		month, err := time.Parse("January", m[1])
+		if err != nil {
+			return s
+		}
+		day, _ := strconv.Atoi(m[2])
+		if day < 1 || day > 31 {
+			return s
+		}
+		return fmt.Sprintf("%s-%02d-%02d", m[3], int(month.Month()), day)
+	}
+	if m := maMonthDateRe.FindStringSubmatch(s); m != nil {
+		month, err := time.Parse("January", m[1])
+		if err != nil {
+			return s
+		}
+		return fmt.Sprintf("%s-%02d", m[2], int(month.Month()))
+	}
+	return s
 }
 
 // Discography fetches and parses the band's "Complete discography" table.

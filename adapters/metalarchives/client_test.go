@@ -127,3 +127,26 @@ func TestBlockedReturnsErrBlocked(t *testing.T) {
 		t.Errorf("expected ErrBlocked, got %v", err)
 	}
 }
+
+func TestNormalizeDate(t *testing.T) {
+	cases := map[string]string{
+		"September 9th, 2026":  "2026-09-09",
+		"September 25th, 2026": "2026-09-25",
+		"October 1st, 2026":    "2026-10-01",
+		"November 2nd, 2026":   "2026-11-02",
+		"May 23rd, 2026":       "2026-05-23",
+		"  August 10, 2026 ":   "2026-08-10",
+		"December 2026":        "2026-12",
+		"2026":                 "2026",
+		"2026-09-09":           "2026-09-09",
+		"2026-09":              "2026-09",
+		"TBA":                  "TBA",
+		"":                     "",
+		"Smarch 3rd, 2026":     "Smarch 3rd, 2026",
+	}
+	for in, want := range cases {
+		if got := NormalizeDate(in); got != want {
+			t.Errorf("NormalizeDate(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
