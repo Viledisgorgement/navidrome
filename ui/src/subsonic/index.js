@@ -83,6 +83,8 @@ const getAvatarUrl = (username, size) =>
 const getCoverArtUrl = (record, size, square) => {
   const options = {
     ...(record.updatedAt && { _: record.updatedAt }),
+    // Albums whose cover was changed in the UI (survives rescans resetting updatedAt)
+    ...(record.coverChangedAt && { c: record.coverChangedAt }),
     ...(size && { size }),
     ...(square && { square }),
   }

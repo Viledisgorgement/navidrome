@@ -39,8 +39,11 @@ services:
       ND_RELEASEALERTSSCHEDULE: '0 6 * * *'
     volumes:
       - navidrome_metal_data:/data
-      - /mnt/data/Music/MainMusic:/music/main:ro
-      - '/mnt/data/Music/Video Game Music:/music/vgm:ro'
+      # Writable so "Change cover art" can save cover.jpg into album folders.
+      # Add :ro back to keep the library read-only; covers are then stored
+      # in the data volume instead.
+      - /mnt/data/Music/MainMusic:/music/main
+      - '/mnt/data/Music/Video Game Music:/music/vgm'
 
 volumes:
   navidrome_metal_data:

@@ -57,6 +57,21 @@ Users can delete their own messages; admins can delete any. Images are stored un
 the data folder (`artwork/chat/`) and are removed when their message is deleted.
 Gated by the same `ND_ENABLECOMMUNITY` flag.
 
+### Change cover art
+Hover an album's cover and click the image-search icon (admins, or everyone when
+`ND_ENABLEARTWORKUPLOAD` is on). The dialog is pre-filled with the album artist and
+title and searches Deezer, iTunes, and MusicBrainz/Cover Art Archive (plus Last.fm
+when `ND_LASTFM_APIKEY` is set); click a result to use it, or paste an image address.
+The camera icon uploads a file from your computer instead.
+
+Like Airsonic, the chosen image is saved as `cover.<ext>` in the album's folder (the
+parent folder for albums split into disc subfolders), and any existing `cover.*` is
+kept as `cover.*.bak`. The folder is rescanned right away. This needs the music
+mounted read-write and the default `ND_COVERARTPRIORITY` (`cover.*` first). If the
+folder is not writable, the cover is stored under the data folder
+(`artwork/album/`) instead and takes priority over everything else; the trash icon
+removes such a cover. Either way it survives rescans.
+
 ## Configuration
 
 | Flag | Default | Purpose |

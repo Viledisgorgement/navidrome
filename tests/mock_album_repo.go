@@ -119,6 +119,19 @@ func (m *MockAlbumRepo) UpdateExternalInfo(album *model.Album) error {
 	return nil
 }
 
+func (m *MockAlbumRepo) SetCover(id, uploadedImage string) error {
+	if m.Err {
+		return errors.New("unexpected error")
+	}
+	al, ok := m.Data[id]
+	if !ok {
+		return model.ErrNotFound
+	}
+	al.UploadedImage = uploadedImage
+	al.CoverChangedAt = new(time.Now())
+	return nil
+}
+
 func (m *MockAlbumRepo) Search(q string, options ...model.QueryOptions) (model.Albums, error) {
 	if len(options) > 0 {
 		m.Options = options[0]

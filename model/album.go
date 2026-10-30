@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/navidrome/navidrome/conf"
+	"github.com/navidrome/navidrome/consts"
 
 	"github.com/gohugoio/hashstructure"
 )
@@ -58,6 +59,12 @@ type Album struct {
 	ExternalUrl           string     `structs:"external_url" json:"externalUrl,omitempty" hash:"ignore"`
 	ExternalInfoUpdatedAt *time.Time `structs:"external_info_updated_at" json:"externalInfoUpdatedAt" hash:"ignore"`
 
+	// Set by "Change cover art". UploadedImage is a cover stored under the data folder
+	// (used when the album folder is not writable); CoverChangedAt busts client caches.
+	// Not written by Put, so rescans keep them; use SetCover to change them.
+	UploadedImage  string     `structs:"-" json:"uploadedImage,omitempty" hash:"ignore"`
+	CoverChangedAt *time.Time `structs:"-" json:"coverChangedAt,omitempty" hash:"ignore"`
+
 	Genre        string       `structs:"genre" json:"genre" hash:"ignore"`               // Easy access to the most common genre
 	Genres       Genres       `structs:"-" json:"genres" hash:"ignore"`                  // Easy access to all genres for this album
 	Tags         Tags         `structs:"tags" json:"tags,omitempty" hash:"ignore"`       // All imported tags for this album
@@ -71,6 +78,10 @@ type Album struct {
 
 func (a Album) CoverArtID() ArtworkID {
 	return artworkIDFromAlbum(a)
+}
+
+func (a Album) UploadedImagePath() string {
+	return UploadedImagePath(consts.EntityAlbum, a.UploadedImage)
 }
 
 func (a Album) FullName() string {
@@ -139,6 +150,7 @@ type AlbumRepository interface {
 	Exists(id string) (bool, error)
 	Put(*Album) error
 	UpdateExternalInfo(*Album) error
+	SetCover(id, uploadedImage string) error
 	Get(id string) (*Album, error)
 	GetAll(...QueryOptions) (Albums, error)
 

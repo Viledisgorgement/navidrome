@@ -2,7 +2,7 @@
 # built from every push to the metal-edition branch.
 #
 # Runs beside prod with its own container, port, and database volume.
-# It mounts the same music read-only, so scans are identical to prod.
+# It mounts the same music as prod, so scans are identical to prod.
 # Access directly at http://<host>:4672 (no base path, no tunnel).
 #
 # Test here first; promote to prod (the :stable image) when satisfied.
@@ -29,8 +29,11 @@ services:
       ND_RELEASEALERTSSCHEDULE: '@every 15m'
     volumes:
       - navidrome_metal_staging_data:/data
-      - /mnt/data/Music/MainMusic:/music/main:ro
-      - '/mnt/data/Music/Video Game Music:/music/vgm:ro'
+      # Writable so "Change cover art" can save cover.jpg into album folders.
+      # Add :ro back to keep the library read-only; covers are then stored
+      # in the data volume instead.
+      - /mnt/data/Music/MainMusic:/music/main
+      - '/mnt/data/Music/Video Game Music:/music/vgm'
 
 volumes:
   navidrome_metal_staging_data:

@@ -49,6 +49,9 @@ func newMediafileArtworkReader(ctx context.Context, artwork *artwork, artID mode
 	if imagesUpdatedAt != nil && imagesUpdatedAt.After(a.cacheKey.lastUpdate) {
 		a.cacheKey.lastUpdate = *imagesUpdatedAt
 	}
+	if t := uploadedImageModTime(*al); t.After(a.cacheKey.lastUpdate) {
+		a.cacheKey.lastUpdate = t
+	}
 	return a, nil
 }
 
@@ -64,12 +67,13 @@ func (a *mediafileArtworkReader) LastUpdated() time.Time {
 }
 
 func (a *mediafileArtworkReader) Reader(ctx context.Context) (io.ReadCloser, string, error) {
-	var ff []sourceFunc
+	// A cover chosen for the album wins over art embedded in individual tracks
+	ff := []sourceFunc{fromLocalFile(a.album.UploadedImagePath())}
 	if a.mediafile.CoverArtID().Kind == model.KindMediaFileArtwork {
-		ff = []sourceFunc{
+		ff = append(ff,
 			fromTag(ctx, a.lib.FS, a.mediafile.Path),
 			fromFFmpegTag(ctx, a.a.ffmpeg, a.lib.Abs(a.mediafile.Path)),
-		}
+		)
 	}
 	// For multi-disc albums, fall back to disc artwork first; for single-disc albums,
 	// skip disc resolution (it would just fall through to album art anyway).

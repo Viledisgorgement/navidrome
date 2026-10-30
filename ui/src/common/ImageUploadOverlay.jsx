@@ -2,6 +2,7 @@ import { IconButton, Tooltip } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles'
 import PhotoCameraIcon from '@material-ui/icons/PhotoCamera'
 import DeleteIcon from '@material-ui/icons/Delete'
+import ImageSearchIcon from '@material-ui/icons/ImageSearch'
 import { useTranslate, useNotify, useRefresh } from 'react-admin'
 import { useCallback, useRef } from 'react'
 import config from '../config'
@@ -41,6 +42,7 @@ export const ImageUploadOverlay = ({
   entityId,
   hasUploadedImage,
   onImageChange,
+  onSearchClick,
 }) => {
   const translate = useTranslate()
   const notify = useNotify()
@@ -107,6 +109,20 @@ export const ImageUploadOverlay = ({
 
   return (
     <div className={classes.coverOverlay}>
+      {onSearchClick && (
+        <Tooltip title={translate(`message.changeCover`)}>
+          <IconButton
+            className={classes.overlayButton}
+            onClick={(e) => {
+              e.stopPropagation()
+              onSearchClick()
+            }}
+            size="small"
+          >
+            <ImageSearchIcon className={classes.overlayIcon} />
+          </IconButton>
+        </Tooltip>
+      )}
       <Tooltip title={translate(`message.uploadCover`)}>
         <IconButton
           className={classes.overlayButton}

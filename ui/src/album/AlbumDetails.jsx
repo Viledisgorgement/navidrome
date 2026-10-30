@@ -31,9 +31,11 @@ import {
   SizeField,
   useAlbumsPerPage,
   useImageLoadingState,
+  ImageUploadOverlay,
 } from '../common'
 import { formatFullDate, intersperse } from '../utils'
 import AlbumExternalLinks from './AlbumExternalLinks'
+import CoverArtSearchDialog from './CoverArtSearchDialog'
 import { SafeHTML } from '../common/SafeHTML'
 
 const useStyles = makeStyles(
@@ -78,6 +80,7 @@ const useStyles = makeStyles(
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      position: 'relative',
     },
     cover: {
       objectFit: 'contain',
@@ -223,6 +226,7 @@ const AlbumDetails = (props) => {
   const classes = useStyles()
   const [expanded, setExpanded] = useState(false)
   const [albumInfo, setAlbumInfo] = useState()
+  const [coverSearchOpen, setCoverSearchOpen] = useState(false)
   const {
     imageLoading,
     imageError,
@@ -275,6 +279,12 @@ const AlbumDetails = (props) => {
             style={{
               cursor: imageError ? 'default' : 'pointer',
             }}
+          />
+          <ImageUploadOverlay
+            entityType="album"
+            entityId={record.id}
+            hasUploadedImage={!!record.uploadedImage}
+            onSearchClick={() => setCoverSearchOpen(true)}
           />
         </div>
         <div className={classes.details}>
@@ -362,6 +372,13 @@ const AlbumDetails = (props) => {
             </Typography>
           </Collapse>
         </div>
+      )}
+      {coverSearchOpen && (
+        <CoverArtSearchDialog
+          record={record}
+          open={coverSearchOpen}
+          onClose={() => setCoverSearchOpen(false)}
+        />
       )}
       {isLightboxOpen && !imageError && (
         <Lightbox

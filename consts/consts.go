@@ -114,6 +114,7 @@ const (
 // Entity types
 const (
 	EntityArtist   = "artist"
+	EntityAlbum    = "album"
 	EntityPlaylist = "playlist"
 	EntityRadio    = "radio"
 	EntityChat     = "chat"

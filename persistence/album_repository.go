@@ -257,6 +257,23 @@ func (r *albumRepository) UpdateExternalInfo(al *model.Album) error {
 	return err
 }
 
+// SetCover records a cover change: the uploaded override image filename (empty
+// when none) and the change time. updated_at is left alone, as rescans reset it.
+func (r *albumRepository) SetCover(id, uploadedImage string) error {
+	upd := Update(r.tableName).
+		Set("uploaded_image", uploadedImage).
+		Set("cover_changed_at", time.Now()).
+		Where(Eq{"id": id})
+	c, err := r.executeSQL(upd)
+	if err != nil {
+		return err
+	}
+	if c == 0 {
+		return model.ErrNotFound
+	}
+	return nil
+}
+
 func (r *albumRepository) selectAlbum(options ...model.QueryOptions) SelectBuilder {
 	sql := r.newSelect(options...).Columns("album.*", "library.path as library_path", "library.name as library_name").
 		LeftJoin("library on album.library_id = library.id")

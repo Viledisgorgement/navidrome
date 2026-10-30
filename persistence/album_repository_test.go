@@ -67,6 +67,34 @@ var _ = Describe("AlbumRepository", func() {
 		})
 	})
 
+	Describe("SetCover", func() {
+		BeforeEach(func() {
+			Expect(albumRepo.Put(&model.Album{ID: "cover-al", Name: "cover", LibraryID: 1})).To(Succeed())
+			DeferCleanup(func() {
+				_, _ = albumRepo.executeSQL(squirrel.Delete("album").Where(squirrel.Eq{"id": "cover-al"}))
+			})
+		})
+		It("stores the uploaded image and change time", func() {
+			Expect(albumRepo.SetCover("cover-al", "cover-al_x.jpg")).To(Succeed())
+			got, err := albumRepo.Get("cover-al")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got.UploadedImage).To(Equal("cover-al_x.jpg"))
+			Expect(got.CoverChangedAt).ToNot(BeNil())
+		})
+		It("survives a scanner Put of the album", func() {
+			Expect(albumRepo.SetCover("cover-al", "cover-al_x.jpg")).To(Succeed())
+			Expect(albumRepo.Put(&model.Album{ID: "cover-al", Name: "cover rescanned", LibraryID: 1})).To(Succeed())
+			got, err := albumRepo.Get("cover-al")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(got.Name).To(Equal("cover rescanned"))
+			Expect(got.UploadedImage).To(Equal("cover-al_x.jpg"))
+			Expect(got.CoverChangedAt).ToNot(BeNil())
+		})
+		It("returns ErrNotFound for unknown albums", func() {
+			Expect(albumRepo.SetCover("nope", "")).To(MatchError(model.ErrNotFound))
+		})
+	})
+
 	Describe("GetAll", func() {
 		var GetAll = func(opts ...model.QueryOptions) (model.Albums, error) {
 			albums, err := albumRepo.GetAll(opts...)

@@ -210,3 +210,62 @@ func (rg ReleaseGroup) Year() int {
 	_, _ = fmt.Sscanf(rg.FirstReleaseDate[:4], "%d", &year)
 	return year
 }
+
+// ReleaseGroupMatch is a release group returned by a title/artist search
+type ReleaseGroupMatch struct {
+	ReleaseGroup
+	Score        int `json:"score"`
+	ArtistCredit []struct {
+		Name string `json:"name"`
+	} `json:"artist-credit"`
+}
+
+// ArtistName joins the artist credit into a display name
+func (m ReleaseGroupMatch) ArtistName() string {
+	names := make([]string, 0, len(m.ArtistCredit))
+	for _, c := range m.ArtistCredit {
+		names = append(names, c.Name)
+	}
+	return strings.Join(names, ", ")
+}
+
+// SearchReleaseGroups finds release groups by album title and (optionally) artist name
+func (c *Client) SearchReleaseGroups(ctx context.Context, artist, album string, limit int) ([]ReleaseGroupMatch, error) {
+	rateLimit(time.Second)
+	query := fmt.Sprintf(`releasegroup:"%s"`, luceneEscape(album))
+	if artist != "" {
+		query += fmt.Sprintf(` AND artist:"%s"`, luceneEscape(artist))
+	}
+	params := url.Values{}
+	params.Set("query", query)
+	params.Set("limit", fmt.Sprint(limit))
+	params.Set("fmt", "json")
+	reqURL := fmt.Sprintf("%s/ws/2/release-group?%s", c.baseURL, params.Encode())
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", fmt.Sprintf("NavidromeMetalEdition/%s (https://github.com/navidrome/navidrome)", consts.Version))
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("musicbrainz: release group search status %d", resp.StatusCode)
+	}
+	var parsed struct {
+		ReleaseGroups []ReleaseGroupMatch `json:"release-groups"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+		return nil, err
+	}
+	return parsed.ReleaseGroups, nil
+}
+
+func luceneEscape(s string) string {
+	return strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(s)
+}

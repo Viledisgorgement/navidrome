@@ -315,7 +315,7 @@ func (p *phaseMissingTracks) moveMatched(target, missing model.MediaFile) error 
 
 					// Keep created_at field from previous instance of the album, so moved albums
 					// don't appear in "Recently Added"
-					if err := tx.Album(p.ctx).CopyAttributes(oldAlbumID, newAlbumID, "created_at"); err != nil {
+					if err := tx.Album(p.ctx).CopyAttributes(oldAlbumID, newAlbumID, "created_at", "uploaded_image", "cover_changed_at"); err != nil {
 						if !errors.Is(err, model.ErrNotFound) {
 							log.Warn(p.ctx, "Scanner: Could not copy album created_at", "from", oldAlbumID, "to", newAlbumID, err)
 						}

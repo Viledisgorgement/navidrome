@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path"
 	"slices"
 	"strings"
@@ -58,6 +59,10 @@ func newAlbumArtworkReader(ctx context.Context, artwork *artwork, artID model.Ar
 	if imagesUpdateAt != nil {
 		a.cacheKey.lastUpdate = utils.TimeNewest(a.cacheKey.lastUpdate, *imagesUpdateAt)
 	}
+	a.cacheKey.lastUpdate = utils.TimeNewest(a.cacheKey.lastUpdate, uploadedImageModTime(*al))
+	if al.CoverChangedAt != nil {
+		a.cacheKey.lastUpdate = utils.TimeNewest(a.cacheKey.lastUpdate, *al.CoverChangedAt)
+	}
 	return a, nil
 }
 
@@ -79,7 +84,8 @@ func (a *albumArtworkReader) LastUpdated() time.Time {
 }
 
 func (a *albumArtworkReader) Reader(ctx context.Context) (io.ReadCloser, string, error) {
-	var ff = a.fromCoverArtPriority(ctx, a.a.ffmpeg, conf.Server.CoverArtPriority)
+	ff := []sourceFunc{fromLocalFile(a.album.UploadedImagePath())}
+	ff = append(ff, a.fromCoverArtPriority(ctx, a.a.ffmpeg, conf.Server.CoverArtPriority)...)
 	return selectImageReader(ctx, a.artID, ff...)
 }
 
@@ -101,6 +107,17 @@ func (a *albumArtworkReader) fromCoverArtPriority(ctx context.Context, ffmpeg ff
 		}
 	}
 	return ff
+}
+
+// uploadedImageModTime returns when the album's user-chosen cover was written, so
+// replacing it invalidates cached artwork even if a rescan resets updated_at.
+func uploadedImageModTime(al model.Album) time.Time {
+	if p := al.UploadedImagePath(); p != "" {
+		if fi, err := os.Stat(p); err == nil {
+			return fi.ModTime()
+		}
+	}
+	return time.Time{}
 }
 
 func loadAlbumFoldersPaths(ctx context.Context, ds model.DataStore, albums ...model.Album) ([]string, []string, *time.Time, error) {

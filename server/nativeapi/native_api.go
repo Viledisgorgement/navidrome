@@ -49,11 +49,12 @@ type Router struct {
 	imgUpload     core.ImageUploadService
 	community     community.Service
 	broker        events.Broker
+	scanner       model.Scanner
 }
 
-func New(ds model.DataStore, share core.Share, playlists playlistsvc.Playlists, insights metrics.Insights, libraryService core.Library, userService core.User, maintenance core.Maintenance, pluginManager PluginManager, imgUpload core.ImageUploadService, broker events.Broker) *Router {
+func New(ds model.DataStore, share core.Share, playlists playlistsvc.Playlists, insights metrics.Insights, libraryService core.Library, userService core.User, maintenance core.Maintenance, pluginManager PluginManager, imgUpload core.ImageUploadService, broker events.Broker, scanner model.Scanner) *Router {
 	r := &Router{ds: ds, share: share, playlists: playlists, insights: insights, libs: libraryService, users: userService, maintenance: maintenance, pluginManager: pluginManager, imgUpload: imgUpload,
-		broker: broker, community: community.NewService(ds)}
+		broker: broker, scanner: scanner, community: community.NewService(ds)}
 	r.Handler = r.routes()
 	return r
 }
@@ -71,7 +72,7 @@ func (api *Router) routes() http.Handler {
 		r.Use(server.UpdateLastAccessMiddleware(api.ds))
 		api.RX(r, "/user", api.users.NewRepository, true)
 		api.R(r, "/song", model.MediaFile{}, false)
-		api.R(r, "/album", model.Album{}, false)
+		api.addAlbumRoute(r)
 		api.addArtistRoute(r)
 		api.R(r, "/genre", model.Genre{}, false)
 		api.R(r, "/player", model.Player{}, true)
