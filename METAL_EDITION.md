@@ -106,7 +106,7 @@ git push origin metal-edition:metal-stable
 
 Both stacks coexist with a stock Navidrome instance — separate images,
 container names, data volumes, and ports. The staging stack mounts the
-same music read-only but keeps its own database.
+same music as prod but keeps its own database.
 
 ## Maintenance notes
 
