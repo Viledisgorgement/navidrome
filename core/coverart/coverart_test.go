@@ -157,6 +157,34 @@ var _ = Describe("coverart", func() {
 			}))
 		})
 
+		It("retries Deezer and iTunes without bracketed title parts", func() {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/deezer/search/album":
+					if r.URL.Query().Get("q") == `artist:"Astrofaes" album:"Ancestors' Shadows"` {
+						_, _ = w.Write([]byte(`{"data":[{"title":"Ancestors' Shadows","cover_medium":"m","cover_xl":"xl","artist":{"name":"Astrofaes"}}]}`))
+						return
+					}
+					_, _ = w.Write([]byte(`{"data":[]}`))
+				case "/itunes/search":
+					if r.URL.Query().Get("term") == "Astrofaes Ancestors' Shadows" {
+						_, _ = w.Write([]byte(`{"results":[{"artistName":"Astrofaes","collectionName":"Ancestors' Shadows","artworkUrl100":"https://mz/100x100bb.jpg"}]}`))
+						return
+					}
+					_, _ = w.Write([]byte(`{"results":[]}`))
+				default:
+					w.WriteHeader(http.StatusNotFound)
+				}
+			}))
+			DeferCleanup(srv.Close)
+			deezerURL, itunesURL, musicBrainzURL = srv.URL+"/deezer", srv.URL+"/itunes", srv.URL+"/mb"
+			conf.Server.LastFM.ApiKey = ""
+			res := Search(ctx, "Astrofaes", "Ancestors' Shadows (Тени Предков)")
+			Expect(res).To(HaveLen(2))
+			Expect(res[0].URL).To(Equal("xl"))
+			Expect(res[1].Source).To(Equal("iTunes"))
+		})
+
 		It("skips Last.fm without an API key and tolerates failing sources", func() {
 			conf.Server.LastFM.ApiKey = ""
 			deezerURL = "http://127.0.0.1:1"

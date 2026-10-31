@@ -61,7 +61,7 @@ Gated by the same `ND_ENABLECOMMUNITY` flag.
 Hover an album's cover and click the image-search icon (admins, or everyone when
 `ND_ENABLEARTWORKUPLOAD` is on). The dialog is pre-filled with the album artist and
 title and searches Deezer, iTunes, and MusicBrainz/Cover Art Archive (plus Last.fm
-when `ND_LASTFM_APIKEY` is set); click a result to use it, or paste an image address.
+when `ND_LASTFM_APIKEY` is set; get a free key at https://www.last.fm/api/account/create). Bracketed title parts like a translated title are dropped on retry when nothing matches. Click a result to use it, or paste an image address.
 The camera icon uploads a file from your computer instead.
 
 Like Airsonic, the chosen image is saved as `cover.<ext>` in the album's folder (the

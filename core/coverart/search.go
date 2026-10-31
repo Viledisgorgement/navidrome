@@ -4,6 +4,7 @@ package coverart
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -123,11 +124,36 @@ func getJSON(ctx context.Context, reqURL string, out any) error {
 	return json.NewDecoder(resp.Body).Decode(out)
 }
 
+var parenRe = regexp.MustCompile(`\s*[(\[][^)\]]*[)\]]`)
+
+// simplifyTitle drops bracketed parts like "(Remastered)" or a translated
+// title, which often keep services from matching
+func simplifyTitle(s string) string {
+	return strings.TrimSpace(parenRe.ReplaceAllString(s, ""))
+}
+
+// searchDeezer tries a strict artist/album query first, then looser ones
 func searchDeezer(ctx context.Context, artist, album string) ([]Candidate, error) {
-	q := fmt.Sprintf(`album:"%s"`, album)
+	short := simplifyTitle(album)
+	queries := []string{fmt.Sprintf(`album:"%s"`, album)}
 	if artist != "" {
-		q = fmt.Sprintf(`artist:"%s" %s`, artist, q)
+		queries[0] = fmt.Sprintf(`artist:"%s" %s`, artist, queries[0])
+		if short != "" && short != album {
+			queries = append(queries, fmt.Sprintf(`artist:"%s" album:"%s"`, artist, short))
+		}
 	}
+	queries = append(queries, strings.TrimSpace(artist+" "+cmp.Or(short, album)))
+	var err error
+	for _, q := range queries {
+		var res []Candidate
+		if res, err = deezerQuery(ctx, q); err == nil && len(res) > 0 {
+			return res, nil
+		}
+	}
+	return nil, err
+}
+
+func deezerQuery(ctx context.Context, q string) ([]Candidate, error) {
 	var res struct {
 		Data []struct {
 			Title   string `json:"title"`
@@ -152,6 +178,16 @@ func searchDeezer(ctx context.Context, artist, album string) ([]Candidate, error
 var itunesSizeRe = regexp.MustCompile(`/\d+x\d+bb\.`)
 
 func searchITunes(ctx context.Context, artist, album string) ([]Candidate, error) {
+	res, err := itunesQuery(ctx, artist+" "+album)
+	if err == nil && len(res) == 0 {
+		if short := simplifyTitle(album); short != "" && short != album {
+			return itunesQuery(ctx, artist+" "+short)
+		}
+	}
+	return res, err
+}
+
+func itunesQuery(ctx context.Context, term string) ([]Candidate, error) {
 	var res struct {
 		Results []struct {
 			ArtistName     string `json:"artistName"`
@@ -160,7 +196,7 @@ func searchITunes(ctx context.Context, artist, album string) ([]Candidate, error
 		} `json:"results"`
 	}
 	params := url.Values{
-		"term":   {strings.TrimSpace(artist + " " + album)},
+		"term":   {strings.TrimSpace(term)},
 		"entity": {"album"},
 		"limit":  {fmt.Sprint(perSourceLimit)},
 	}
