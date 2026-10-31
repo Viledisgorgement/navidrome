@@ -24,11 +24,6 @@ services:
       ND_SCANSCHEDULE: '@every 1h'
       # Default library on first boot; add the others in Settings -> Libraries
       ND_MUSICFOLDER: /music/main
-      # Last.fm key/secret: set the values under the stack's "Environment
-      # variables" in Portainer (kept out of git). Used for Change cover art
-      # search, artist info and scrobbling. Empty = Last.fm off.
-      ND_LASTFM_APIKEY: ${ND_LASTFM_APIKEY:-}
-      ND_LASTFM_SECRET: ${ND_LASTFM_SECRET:-}
       # Serve under /navidrome (matches the cloudflared public hostname path)
       ND_BASEURL: /navidrome
       # Last.fm: set LASTFM_APIKEY / LASTFM_SECRET as stack environment
