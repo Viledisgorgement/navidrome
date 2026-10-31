@@ -80,7 +80,7 @@ func (api *Router) setAlbumCoverFromURL(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "could not download image: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	savedTo, err := api.saveAlbumCover(ctx, chi.URLParamFromCtx(ctx, "id"), data, ext)
+	savedTo, reason, err := api.saveAlbumCover(ctx, chi.URLParamFromCtx(ctx, "id"), data, ext)
 	if errors.Is(err, model.ErrNotFound) {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
@@ -91,7 +91,7 @@ func (api *Router) setAlbumCoverFromURL(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "savedTo": savedTo})
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok", "savedTo": savedTo, "reason": reason})
 }
 
 func (api *Router) uploadAlbumImage() http.HandlerFunc {
@@ -100,7 +100,7 @@ func (api *Router) uploadAlbumImage() http.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		_, err = api.saveAlbumCover(ctx, chi.URLParamFromCtx(ctx, "id"), data, coverart.ImageExt(strings.TrimPrefix(ext, ".")))
+		_, _, err = api.saveAlbumCover(ctx, chi.URLParamFromCtx(ctx, "id"), data, coverart.ImageExt(strings.TrimPrefix(ext, ".")))
 		return err
 	})
 }
@@ -123,15 +123,16 @@ func (api *Router) deleteAlbumImage() http.HandlerFunc {
 // saveAlbumCover writes the image as cover.<ext> in the album folder, like
 // Airsonic, then rescans that folder so Navidrome picks it up. If the folder
 // cannot be written (e.g. the library is mounted read-only), the image is
-// stored under the data folder as an override instead.
-func (api *Router) saveAlbumCover(ctx context.Context, albumID string, data []byte, ext string) (string, error) {
+// stored under the data folder as an override instead, and the returned reason
+// says why the folder write failed.
+func (api *Router) saveAlbumCover(ctx context.Context, albumID string, data []byte, ext string) (savedTo, reason string, err error) {
 	al, err := api.ds.Album(ctx).Get(albumID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	folder, err := api.albumCoverFolder(ctx, *al)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	path, err := coverart.WriteFolderCover(folder.AbsolutePath(), data, ext)
@@ -141,19 +142,20 @@ func (api *Router) saveAlbumCover(ctx context.Context, albumID string, data []by
 			log.Warn(ctx, "Could not remove previous cover override", "album", al.Name, err)
 		}
 		api.rescanCoverFolder(ctx, *folder)
-		return coverSavedToFolder, api.ds.Album(ctx).SetCover(al.ID, "")
+		return coverSavedToFolder, "", api.ds.Album(ctx).SetCover(al.ID, "")
 	}
 	if !isNotWritable(err) {
-		return "", err
+		return "", "", err
 	}
+	reason = err.Error()
 
 	log.Warn(ctx, "Album folder is not writable, saving cover as an override in the data folder",
 		"album", al.Name, "folder", folder.AbsolutePath(), err)
 	filename, err := api.imgUpload.SetImage(ctx, consts.EntityAlbum, al.ID, al.Name, al.UploadedImagePath(), bytes.NewReader(data), ext)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return coverSavedAsOverride, api.ds.Album(ctx).SetCover(al.ID, filename)
+	return coverSavedAsOverride, reason, api.ds.Album(ctx).SetCover(al.ID, filename)
 }
 
 // albumCoverFolder picks the folder the cover belongs in: the album's folder,

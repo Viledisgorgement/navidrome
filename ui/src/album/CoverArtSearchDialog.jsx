@@ -148,6 +148,7 @@ export const CoverArtSearchDialog = ({ record, open, onClose }) => {
               ? 'message.coverSavedAsOverride'
               : 'message.coverSavedToFolder',
             json.savedTo === 'override' ? 'warning' : 'success',
+            { reason: json.reason },
           )
           refresh()
           onClose()
