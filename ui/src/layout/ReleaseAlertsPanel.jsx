@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useTranslate, Link } from 'react-admin'
 import {
@@ -16,7 +16,13 @@ import {
 import NotificationsIcon from '@material-ui/icons/Notifications'
 import LaunchIcon from '@material-ui/icons/Launch'
 import { httpClient } from '../dataProvider'
-import config from '../config'
+import { GROUPS, groupAlerts } from '../newreleases/releaseGroups'
+
+// The bell shows the same date groups as the New Releases page, minus
+// releases from earlier months and undated ones ("See all" has those).
+const BELL_GROUPS = GROUPS.filter((g) => !['earlier', 'tba'].includes(g.key))
+const MAX_FETCH = 500
+const MAX_SHOWN = 50
 
 // Alerts store ISO dates (YYYY-MM-DD or YYYY-MM) so they sort correctly;
 // show them in the user's locale. Anything else is shown as-is.
@@ -73,6 +79,15 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(1, 1, 0.5, 1),
     fontSize: '0.8rem',
   },
+  groupHeader: {
+    padding: theme.spacing(0.75, 1, 0.25, 1),
+    fontSize: '0.7rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    color: theme.palette.text.secondary,
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
   header: {
     padding: theme.spacing(1, 1, 0.5, 1),
     fontWeight: 600,
@@ -91,7 +106,7 @@ const ReleaseAlertsPanel = () => {
   const open = Boolean(anchorEl)
 
   const fetchAlerts = useCallback(() => {
-    httpClient('/api/community/alerts?count=50')
+    httpClient(`/api/community/alerts?count=${MAX_FETCH}`)
       .then((resp) => {
         setAlerts(resp.json?.alerts || [])
         setUnread(resp.json?.unreadCount || 0)
@@ -102,6 +117,18 @@ const ReleaseAlertsPanel = () => {
   useEffect(() => {
     fetchAlerts()
   }, [fetchAlerts, alertBump])
+
+  // Grouped against today's date on every render, so the list follows the
+  // calendar instead of the server's fixed 14-day ordering.
+  const sections = useMemo(() => {
+    const groups = groupAlerts(alerts)
+    let remaining = MAX_SHOWN
+    return BELL_GROUPS.map((g) => {
+      const items = groups[g.key].slice(0, Math.max(remaining, 0))
+      remaining -= items.length
+      return { key: g.key, items }
+    }).filter((g) => g.items.length > 0)
+  }, [alerts, anchorEl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget)
@@ -145,38 +172,46 @@ const ReleaseAlertsPanel = () => {
                 {translate('releaseAlerts.seeAll')}
               </Link>
             </div>
-            {alerts.length === 0 ? (
+            {sections.length === 0 ? (
               <Typography className={classes.empty}>
                 {translate('releaseAlerts.empty')}
               </Typography>
             ) : (
               <List className={classes.list} dense>
-                {alerts.map((alert) => (
-                  <ListItem key={alert.id} className={classes.item}>
-                    <Typography className={classes.title}>
-                      <Link
-                        to={`/artist/${alert.artistId}/show`}
-                        onClick={() => setAnchorEl(null)}
-                      >
-                        {alert.artistName}
-                      </Link>
-                      {' — '}
-                      {alert.title}
-                    </Typography>
-                    <Typography className={classes.detail}>
-                      {alert.releaseType} ·{' '}
-                      {formatReleaseDate(alert.releaseDate)} · {alert.source}
-                      {alert.externalUrl && (
-                        <a
-                          href={alert.externalUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <LaunchIcon style={{ fontSize: 13 }} />
-                        </a>
-                      )}
-                    </Typography>
-                  </ListItem>
+                {sections.map((section) => (
+                  <React.Fragment key={section.key}>
+                    <li className={classes.groupHeader}>
+                      {translate(`newReleases.groups.${section.key}`)}
+                    </li>
+                    {section.items.map((alert) => (
+                      <ListItem key={alert.id} className={classes.item}>
+                        <Typography className={classes.title}>
+                          <Link
+                            to={`/artist/${alert.artistId}/show`}
+                            onClick={() => setAnchorEl(null)}
+                          >
+                            {alert.artistName}
+                          </Link>
+                          {' — '}
+                          {alert.title}
+                        </Typography>
+                        <Typography className={classes.detail}>
+                          {alert.releaseType} ·{' '}
+                          {formatReleaseDate(alert.releaseDate)} ·{' '}
+                          {alert.source}
+                          {alert.externalUrl && (
+                            <a
+                              href={alert.externalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <LaunchIcon style={{ fontSize: 13 }} />
+                            </a>
+                          )}
+                        </Typography>
+                      </ListItem>
+                    ))}
+                  </React.Fragment>
                 ))}
               </List>
             )}
