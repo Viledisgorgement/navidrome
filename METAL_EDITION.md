@@ -108,6 +108,36 @@ Both stacks coexist with a stock Navidrome instance — separate images,
 container names, data volumes, and ports. The staging stack mounts the
 same music as prod but keeps its own database.
 
+## Sonos
+
+Navidrome has no Sonos support of its own. `deploy/portainer-stack-bonob.yml`
+runs [bonob](https://github.com/simojenki/bonob) beside it, which presents the
+library to Sonos as a music service. On Sonos S2 the Sonos cloud talks to bonob
+over the internet and the speaker pulls audio from bonob's public address, so
+the speaker can be on a different network from the server (an office, say).
+
+1. Deploy the bonob stack with `BONOB_URL`, `BONOB_SECRET` and `NAVIDROME_URL`
+   set (see the comments in the stack file).
+2. Publish `http://<host>:4534` at `BONOB_URL` over HTTPS on port 443, for
+   example a `bonob.` subdomain in Caddy (`reverse_proxy <host>:4534`) or a
+   cloudflared public hostname. Opening `BONOB_URL` in a browser should show
+   the bonob page.
+3. Sign in at https://developer.sonos.com with the same Sonos account the
+   speaker uses, create a **Content Integration (Sandbox)**, and fill it in as
+   described in bonob's
+   [S2 setup guide](https://github.com/simojenki/bonob/blob/master/docs/sonos-s2-setup.md)
+   (SMAPI endpoint `BONOB_URL/ws/sonos`, OAuth with redirect `BONOB_URL/login`,
+   your Sonos ID under Service Deployment Settings). Press Refresh, then Send.
+4. After about 10 minutes, restart the Sonos app, search for the service name
+   under music services, add it, and sign in with a Navidrome user.
+
+Sonos plays are scrobbled, so they appear in the community sidebar and history.
+
+Caveats: this uses Sonos's developer sandbox, which Sonos does not officially
+support for self-hosting (they only support Plex), and there are reports of
+sandbox services vanishing from the app and needing to be recreated. Older S1
+systems register differently; see bonob's S1 guide.
+
 ## Maintenance notes
 
 - New code lives in new files: `core/community/`, `adapters/musicbrainz/`,
