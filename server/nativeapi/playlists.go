@@ -21,6 +21,20 @@ import (
 
 type restHandler = func(rest.RepositoryConstructor, ...rest.Logger) http.HandlerFunc
 
+// writePlaylistError maps a playlist service error to an HTTP status, or defaultStatus if unknown.
+func writePlaylistError(w http.ResponseWriter, err error, defaultStatus int) {
+	switch {
+	case errors.Is(err, model.ErrNotFound):
+		http.Error(w, err.Error(), http.StatusNotFound)
+	case errors.Is(err, model.ErrNotAuthorized):
+		http.Error(w, err.Error(), http.StatusForbidden)
+	case errors.Is(err, playlists.ErrTooManyEntries), errors.As(err, new(*http.MaxBytesError)):
+		http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+	default:
+		http.Error(w, err.Error(), defaultStatus)
+	}
+}
+
 func playlistTracksHandler(pls playlists.Playlists, handler restHandler, refreshSmartPlaylist func(*http.Request) bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		plsId := chi.URLParam(r, "playlistId")
@@ -50,14 +64,17 @@ func getPlaylistTrack(pls playlists.Playlists) http.HandlerFunc {
 	return playlistTracksHandler(pls, rest.Get, func(*http.Request) bool { return true })
 }
 
+// maxM3UUploadSize fits playlists.MaxImportM3UEntries entries with long paths and #EXTINF lines.
+const maxM3UUploadSize = 32 << 20
+
 func createPlaylistFromM3U(pls playlists.Playlists) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		pl, err := pls.ImportM3U(ctx, r.Body)
+		pl, err := pls.ImportM3U(ctx, http.MaxBytesReader(w, r.Body, maxM3UUploadSize))
 		if err != nil {
 			log.Error(r.Context(), "Error parsing playlist", err)
 			// TODO: consider returning StatusBadRequest for playlists that are malformed
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			writePlaylistError(w, err, http.StatusInternalServerError)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
