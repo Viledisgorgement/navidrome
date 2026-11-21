@@ -14,6 +14,7 @@ import (
 	"github.com/navidrome/navidrome/adapters/musicbrainz"
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
+	"github.com/navidrome/navidrome/persistence"
 )
 
 const discographyCacheTTL = 30 * 24 * time.Hour
@@ -65,21 +66,24 @@ func (s *service) Discography(ctx context.Context, artistID string, refresh bool
 			cached[j].Source != model.ReleaseSourceMetalArchives
 	})
 
+	// Same album set the artist page shows: albums where the artist is an
+	// album artist OR a track artist. album.album_artist_id alone only holds
+	// the first album artist, so albums credited to e.g. "TPR & Roxane Genot"
+	// or tagged with a different primary album artist were never considered
 	albums, err := s.ds.Album(ctx).GetAll(model.QueryOptions{
-		Filters: squirrel.Eq{"album.album_artist_id": artistID},
+		Filters: squirrel.And{
+			squirrel.Or{
+				squirrel.Eq{"album.album_artist_id": artistID},
+				persistence.Exists("json_tree(participants, '$.albumartist')", squirrel.Eq{"value": artistID}),
+				persistence.Exists("json_tree(participants, '$.artist')", squirrel.Eq{"value": artistID}),
+			},
+			squirrel.Eq{"album.missing": false},
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
-	byReleaseGroup := map[string]*model.Album{}
-	byTitle := map[string]*model.Album{}
-	for i := range albums {
-		album := &albums[i]
-		if album.MbzReleaseGroupID != "" {
-			byReleaseGroup[album.MbzReleaseGroupID] = album
-		}
-		byTitle[normalizeTitle(album.Name)] = album
-	}
+	matcher := newAlbumMatcher(albums)
 
 	result := &Discography{ArtistID: artistID, ArtistName: artist.Name}
 	sources := map[string]bool{}
@@ -99,7 +103,7 @@ func (s *service) Discography(ctx context.Context, artistID string, refresh bool
 			existing := &result.Releases[idx]
 			if existing.MbzReleaseGroupID == "" && release.MbzReleaseGroupID != "" {
 				existing.MbzReleaseGroupID = release.MbzReleaseGroupID
-				if album := byReleaseGroup[release.MbzReleaseGroupID]; !existing.Owned && album != nil {
+				if album := matcher.byReleaseGroup[release.MbzReleaseGroupID]; !existing.Owned && album != nil {
 					existing.Owned = true
 					existing.AlbumID = album.ID
 				}
@@ -116,10 +120,7 @@ func (s *service) Discography(ctx context.Context, artistID string, refresh bool
 			Source:            release.Source,
 			MbzReleaseGroupID: release.MbzReleaseGroupID,
 		}
-		if album := byReleaseGroup[release.MbzReleaseGroupID]; release.MbzReleaseGroupID != "" && album != nil {
-			entry.Owned = true
-			entry.AlbumID = album.ID
-		} else if album := byTitle[normalizeTitle(release.Title)]; album != nil {
+		if album := matcher.match(release.MbzReleaseGroupID, release.Title, release.Year); album != nil {
 			entry.Owned = true
 			entry.AlbumID = album.ID
 		}
@@ -273,15 +274,108 @@ func (s *service) refreshMetalArchives(ctx context.Context, artist *model.Artist
 	_ = repo.PutArtistInfo(info)
 }
 
-var nonAlphaNum = regexp.MustCompile(`[^a-z0-9]+`)
+var (
+	nonAlphaNum = regexp.MustCompile(`[^a-z0-9]+`)
+	// Trailing "(Remastered)", "[Deluxe Edition]", "(2014 Reissue)" etc.
+	editionSuffix = regexp.MustCompile(`\s*[(\[][^)\]]*\b(remaster(ed)?|deluxe|edition|reissue|bonus tracks?|expanded|anniversary)\b[^)\]]*[)\]]\s*$`)
+	// Separator between a release's main title and its subtitle:
+	// "Buried in the Snow: A Melancholy Tribute to…", "Farewell Hyrule King - Melancholy music from…"
+	subtitleSep = regexp.MustCompile(`\s*(:|\s[-–—]\s)\s*`)
+)
 
 // normalizeTitle lowercases and strips punctuation/whitespace so that
-// "Slaughter of the Soul (Remastered)" matches "slaughter of the soul
-// remastered"-ish variants from different sources.
+// "Slaughter of the Soul (Remastered)" matches "slaughter of the soul"
+// and "VII, VIII & IX" matches "VII, VIII and IX" across sources.
 func normalizeTitle(title string) string {
 	normalized := strings.ToLower(title)
-	for _, suffix := range []string{"(remaster)", "(remastered)", "(deluxe edition)", "(reissue)", "(bonus track edition)"} {
-		normalized = strings.TrimSpace(strings.TrimSuffix(normalized, suffix))
+	normalized = strings.NewReplacer("&", " and ", "+", " and ", "’", "'", "‘", "'").Replace(normalized)
+	for {
+		trimmed := editionSuffix.ReplaceAllString(normalized, "")
+		if trimmed == normalized {
+			break
+		}
+		normalized = trimmed
 	}
+	normalized = strings.ReplaceAll(normalized, "'", "")
 	return strings.Trim(nonAlphaNum.ReplaceAllString(normalized, " "), " ")
+}
+
+// mainTitle returns the normalized part of a title before its subtitle
+// ("Buried in the Snow: A Melancholy Tribute…" -> "buried in the snow"), or
+// "" when the title has no subtitle.
+func mainTitle(title string) string {
+	loc := subtitleSep.FindStringIndex(title)
+	if loc == nil || loc[0] == 0 {
+		return ""
+	}
+	return normalizeTitle(title[:loc[0]])
+}
+
+// albumMatcher decides whether an external release exists in the library.
+type albumMatcher struct {
+	byReleaseGroup map[string]*model.Album
+	byTitle        map[string]*model.Album
+	byMainTitle    map[string][]*model.Album
+}
+
+func newAlbumMatcher(albums model.Albums) *albumMatcher {
+	m := &albumMatcher{
+		byReleaseGroup: map[string]*model.Album{},
+		byTitle:        map[string]*model.Album{},
+		byMainTitle:    map[string][]*model.Album{},
+	}
+	for i := range albums {
+		album := &albums[i]
+		if album.MbzReleaseGroupID != "" {
+			m.byReleaseGroup[album.MbzReleaseGroupID] = album
+		}
+		m.byTitle[normalizeTitle(album.Name)] = album
+		main := mainTitle(album.Name)
+		if main == "" {
+			main = normalizeTitle(album.Name)
+		}
+		m.byMainTitle[main] = append(m.byMainTitle[main], album)
+	}
+	return m
+}
+
+// match tries, in order: the MusicBrainz release-group id, the full
+// normalized title, then the main title (text before ":" or " - ") when the
+// release years agree. The last step covers sources that word the subtitle
+// differently ("…Final Fantasy VII, VIII & IX" vs "…VII VIII and IX").
+// The year guard keeps different releases sharing a main title apart, e.g.
+// "Fragments of Memories" (2013) vs its 2017 Definitive Edition.
+func (m *albumMatcher) match(releaseGroupID, title string, year int) *model.Album {
+	if releaseGroupID != "" {
+		if album := m.byReleaseGroup[releaseGroupID]; album != nil {
+			return album
+		}
+	}
+	if album := m.byTitle[normalizeTitle(title)]; album != nil {
+		return album
+	}
+	main := mainTitle(title)
+	if main == "" {
+		main = normalizeTitle(title)
+	}
+	// One- or two-word main titles ("Memoria", "Reductions") are too generic
+	// to match on without the subtitle
+	if len(strings.Fields(main)) < 2 || year == 0 {
+		return nil
+	}
+	for _, album := range m.byMainTitle[main] {
+		if albumYearMatches(album, year) {
+			return album
+		}
+	}
+	return nil
+}
+
+func albumYearMatches(album *model.Album, year int) bool {
+	for _, y := range []int{album.MinOriginalYear, album.MaxOriginalYear, album.MinYear, album.MaxYear} {
+		if y != 0 && y >= year-1 && y <= year+1 {
+			return true
+		}
+	}
+	return false
 }
