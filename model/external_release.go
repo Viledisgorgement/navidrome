@@ -32,6 +32,7 @@ type ExternalArtistInfo struct {
 const (
 	ReleaseSourceMusicBrainz   = "musicbrainz"
 	ReleaseSourceMetalArchives = "metalarchives"
+	ReleaseSourceBandcamp      = "bandcamp"
 )
 
 type ExternalReleaseRepository interface {

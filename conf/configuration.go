@@ -120,6 +120,7 @@ type configOptions struct {
 	EnableCommunity                 bool
 	MusicBrainz                     musicBrainzOptions   `json:",omitzero"`
 	MetalArchives                   metalArchivesOptions `json:",omitzero"`
+	Bandcamp                        bandcampOptions      `json:",omitzero"`
 	EnableReleaseAlerts             bool
 	ReleaseAlertsSchedule           string
 	Tags                            map[string]TagConf `json:",omitempty"`
@@ -219,6 +220,10 @@ type deezerOptions struct {
 type musicBrainzOptions struct {
 	Enabled bool
 	BaseURL string
+}
+
+type bandcampOptions struct {
+	Enabled bool
 }
 
 type metalArchivesOptions struct {
@@ -869,6 +874,7 @@ func setViperDefaults() {
 	viper.SetDefault("musicbrainz.baseurl", "https://musicbrainz.org")
 	viper.SetDefault("metalarchives.enabled", false)
 	viper.SetDefault("metalarchives.baseurl", "https://www.metal-archives.com")
+	viper.SetDefault("bandcamp.enabled", true)
 	viper.SetDefault("enablereleasealerts", true)
 	viper.SetDefault("releasealertsschedule", "0 6 * * *")
 	viper.SetDefault("httpheaders.frameoptions", "DENY")

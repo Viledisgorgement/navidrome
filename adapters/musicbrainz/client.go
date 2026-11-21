@@ -269,3 +269,50 @@ func (c *Client) SearchReleaseGroups(ctx context.Context, artist, album string, 
 func luceneEscape(s string) string {
 	return strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(s)
 }
+
+type artistURLRels struct {
+	Relations []struct {
+		Type string `json:"type"`
+		URL  struct {
+			Resource string `json:"resource"`
+		} `json:"url"`
+	} `json:"relations"`
+}
+
+// ArtistBandcampURL returns the artist's Bandcamp page linked on
+// MusicBrainz ("https://name.bandcamp.com"), or "" when there is none.
+func (c *Client) ArtistBandcampURL(ctx context.Context, mbid string) (string, error) {
+	rateLimit(time.Second)
+	reqURL := fmt.Sprintf("%s/ws/2/artist/%s?inc=url-rels&fmt=json", c.baseURL, url.PathEscape(mbid))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", fmt.Sprintf("NavidromeMetalEdition/%s (https://github.com/navidrome/navidrome)", consts.Version))
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("musicbrainz: artist lookup status %d", resp.StatusCode)
+	}
+	var parsed artistURLRels
+	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+		return "", err
+	}
+	for _, rel := range parsed.Relations {
+		if rel.Type != "bandcamp" {
+			continue
+		}
+		u, err := url.Parse(rel.URL.Resource)
+		if err != nil || u.Host == "" {
+			continue
+		}
+		// Keep only the artist root; some links point at an album page
+		return "https://" + u.Host, nil
+	}
+	return "", nil
+}

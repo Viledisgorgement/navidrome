@@ -144,7 +144,7 @@ const formatReleaseDate = (date) => {
 }
 
 // Candidate cover images, best first: the Cover Art Archive for MusicBrainz
-// release groups, Metal Archives' album image, then the artist's own image
+// release groups, Metal Archives' album image, Bandcamp's album art, then the artist's own image
 // from the library.
 const coverUrls = (alert) => {
   const urls = []
@@ -159,6 +159,12 @@ const coverUrls = (alert) => {
     urls.push(
       `https://www.metal-archives.com/images/${d[0]}/${d[1]}/${d[2]}/${d[3]}/${externalId}.jpg`,
     )
+  }
+  if (source === 'bandcamp') {
+    const artId = externalId.split('@')[1]
+    if (/^\d+$/.test(artId || '')) {
+      urls.push(`https://f4.bcbits.com/img/a${artId}_2.jpg`)
+    }
   }
   urls.push(subsonic.getCoverArtUrl({ id: alert.artistId }, 300, true))
   return urls

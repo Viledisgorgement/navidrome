@@ -85,6 +85,11 @@ func (s *service) Discography(ctx context.Context, artistID string, refresh bool
 	sources := map[string]bool{}
 	seen := map[string]int{}
 	for _, release := range cached {
+		// Bandcamp entries are only a new-release bookkeeping cache for the
+		// alert checker (most have no date), not part of the discography
+		if release.Source == model.ReleaseSourceBandcamp {
+			continue
+		}
 		key := fmt.Sprintf("%s|%d", normalizeTitle(release.Title), release.Year)
 		sources[release.Source] = true
 		if idx, dup := seen[key]; dup {
