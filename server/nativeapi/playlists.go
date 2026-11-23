@@ -148,7 +148,7 @@ func addToPlaylist(pls playlists.Playlists) http.HandlerFunc {
 		p := req.Params(r)
 		playlistId, _ := p.String(":playlistId")
 		var payload addTracksPayload
-		err := json.NewDecoder(r.Body).Decode(&payload)
+		err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxNativeJSONBody)).Decode(&payload)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -198,7 +198,7 @@ func reorderItem(pls playlists.Playlists) http.HandlerFunc {
 			return
 		}
 		var payload reorderPayload
-		err := json.NewDecoder(r.Body).Decode(&payload)
+		err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxSmallJSONBody)).Decode(&payload)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

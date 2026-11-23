@@ -87,9 +87,7 @@ func (api *Router) updatePlugin(w http.ResponseWriter, r *http.Request) {
 
 	// Parse update request
 	var req PluginUpdateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Error(ctx, "Error decoding request", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !server.DecodeJSONBody(w, r, maxPluginUpdateBody, &req) {
 		return
 	}
 

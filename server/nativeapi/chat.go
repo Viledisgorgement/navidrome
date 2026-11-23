@@ -111,7 +111,7 @@ func (api *Router) postChatMessage(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			Message string `json:"message"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxSmallJSONBody)).Decode(&body); err != nil {
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}

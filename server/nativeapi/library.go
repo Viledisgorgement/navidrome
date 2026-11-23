@@ -10,6 +10,7 @@ import (
 	"github.com/navidrome/navidrome/core"
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
+	"github.com/navidrome/navidrome/server"
 )
 
 // User-library association endpoints (admin only)
@@ -65,9 +66,7 @@ func setUserLibraries(service core.Library) http.HandlerFunc {
 		var request struct {
 			LibraryIDs []int `json:"libraryIds"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			log.Error(r.Context(), "Error decoding request", err)
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
+		if !server.DecodeJSONBody(w, r, maxSmallJSONBody, &request) {
 			return
 		}
 
