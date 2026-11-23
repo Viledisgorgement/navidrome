@@ -3,6 +3,7 @@ package artwork
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -210,10 +211,13 @@ func fromAlbumExternalSource(ctx context.Context, al model.Album, provider exter
 }
 
 func fromURL(ctx context.Context, imageUrl *url.URL) (io.ReadCloser, string, error) {
-	hc := http.Client{Timeout: 5 * time.Second}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, imageUrl.String(), nil)
 	req.Header.Set("User-Agent", consts.HTTPUserAgent)
-	resp, err := hc.Do(req) //nolint:gosec
+	resp, err := externalHTTPClient.Do(req) //nolint:gosec
+	if errors.Is(err, errPrivateAddress) {
+		log.Warn(ctx, "Refusing to fetch artwork from a non-public address", "url", imageUrl.String(), err)
+		return nil, "", nil
+	}
 	if err != nil {
 		return nil, "", err
 	}
