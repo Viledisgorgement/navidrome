@@ -1,0 +1,41 @@
+# Sonos bridge for Navidrome Metal Edition (bonob)
+#
+# bonob (https://github.com/simojenki/bonob) presents Navidrome to Sonos as
+# a music service, so the library can be browsed and played from the Sonos
+# app. On Sonos S2 everything goes over the internet (the Sonos cloud calls
+# bonob, and the speaker pulls audio from bonob), so the speaker does NOT
+# need to be on the same network as this server.
+#
+# This is its own stack: it does not touch the prod or staging Navidrome
+# containers and can be removed at any time.
+#
+# Set these as stack environment variables in Portainer:
+#   BONOB_URL      public HTTPS address of bonob on port 443, with no port
+#                  in the URL, e.g. https://bonob.vileserver.xyz
+#                  (Sonos silently ignores any other port)
+#   BONOB_SECRET   any long random string (encrypts the stored logins)
+#   NAVIDROME_URL  how bonob reaches Navidrome, including the base path,
+#                  e.g. http://192.168.1.10:4671/navidrome
+#
+# Then publish http://<host>:4534 at BONOB_URL (a Caddy site block or a
+# cloudflared public hostname) and follow "Sonos" in METAL_EDITION.md.
+
+services:
+  bonob:
+    image: ghcr.io/simojenki/bonob:latest
+    container_name: navidrome-metal-bonob
+    restart: unless-stopped
+    ports:
+      - '4534:4534'
+    environment:
+      BNB_PORT: 4534
+      BNB_URL: ${BONOB_URL:?set BONOB_URL to the public https address}
+      BNB_SECRET: ${BONOB_SECRET:?set BONOB_SECRET to a long random string}
+      BNB_SUBSONIC_URL: ${NAVIDROME_URL:?set NAVIDROME_URL}
+      # Sonos plays show up in the community sidebar and play history
+      BNB_SCROBBLE_TRACKS: 'true'
+      BNB_REPORT_NOW_PLAYING: 'true'
+      BNB_LOGIN_THEME: navidrome-ish
+      # S2 registers through developer.sonos.com, not from the LAN
+      BNB_SONOS_AUTO_REGISTER: 'false'
+      BNB_SONOS_DEVICE_DISCOVERY: 'false'
